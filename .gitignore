@@ -9,3 +9,13 @@ analysis/*png
 analysis/*html
 analysis/*_cache
 analysis/site_libs
+data/bodenmiller_cytof
+data/explore_supercell_purity_clustering
+data/haas_bm
+data/oetjen_bm_dataset
+data/trussart_cytofruv
+output/bodenmiller_cytof
+output/explore_supercell_purity_clustering
+output/oetjen_b_cell_panel
+output/trussart_cytofruv
+output/label_transfer
