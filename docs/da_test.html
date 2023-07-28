@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Givanna Putri" />
+
+<meta name="date" content="2023-07-05" />
+
+<title>Identification of Differentially Abundant Rare Monocyte Subsets in Melanoma Patients</title>
+
+<script src="site_libs/header-attrs-2.20/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">SuperCellCyto_analysis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Identification of Differentially Abundant
+Rare Monocyte Subsets in Melanoma Patients</h1>
+<h4 class="author">Givanna Putri</h4>
+<h4 class="date">2023-07-05</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2023-07-28
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>SuperCellCyto-analysis/</code>
+<span class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.0). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed42code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(42)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed42code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(42)</code> was run prior to running the
+code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrong402358b">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong> 402358b
+</a>
+</p>
+</div>
+<div id="strongRepositoryversionstrong402358b"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version 402358b.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rproj.user/
+    Ignored:    code/.DS_Store
+    Ignored:    data/.DS_Store
+    Ignored:    data/bodenmiller_cytof/
+    Ignored:    data/explore_supercell_purity_clustering/
+    Ignored:    data/haas_bm/
+    Ignored:    data/oetjen_bm_dataset/
+    Ignored:    data/trussart_cytofruv/
+    Ignored:    output/.DS_Store
+    Ignored:    output/bodenmiller_cytof/
+    Ignored:    output/explore_supercell_purity_clustering/
+    Ignored:    output/label_transfer/
+    Ignored:    output/oetjen_b_cell_panel/
+    Ignored:    output/trussart_cytofruv/
+
+Untracked files:
+    Untracked:  README.html
+    Untracked:  analysis/ref.bib
+    Untracked:  code/README.html
+    Untracked:  code/b_cell_identification/
+    Untracked:  code/batch_correction/
+    Untracked:  code/bodenmiller_data/
+    Untracked:  code/explore_supercell_purity_clustering/
+    Untracked:  code/label_transfer/
+    Untracked:  data/README.html
+    Untracked:  output/README.html
+
+Unstaged changes:
+    Modified:   .gitignore
+    Modified:   README.md
+    Modified:   _workflowr.yml
+    Modified:   analysis/_site.yml
+    Modified:   code/README.md
+    Modified:   data/README.md
+    Modified:   output/README.md
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/da_test.Rmd</code>) and HTML
+(<code>docs/da_test.html</code>) files. If you’ve configured a remote
+Git repository (see <code>?wflow_git_remote</code>), click on the
+hyperlinks in the table below to view the files as they were in that
+past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+402358b
+</td>
+<td>
+Givanna Putri
+</td>
+<td>
+2023-07-28
+</td>
+<td>
+wflow_publish(c("analysis/*Rmd"))
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In this analysis, we investigated the capacity to conduct
+differential abundance analysis using supercells. We applied
+SuperCellCyto and Propeller <span class="citation">(Phipson et al.
+2022)</span> to a mass cytometry dataset quantifying the baseline
+samples (pre-treatment) of melanoma patients who subsequently either
+responded (R) or did not respond (NR) to an anti-PD1 immunotherapy
+(Anti_PD1 dataset). There are 20 samples in total (10 responders and 10
+non-responders samples). The objective of this analysis was to identify
+a rare subset of monocytes, characterised as CD14+, CD33+, HLA-DRhi,
+ICAM-1+, CD64+, CD141+, CD86+, CD11c+, CD38+, PD-L1+, CD11b+, whose
+abundance correlates strongly with the patient’s response status to
+anti-PD1 immunotherapy <span class="citation">(Krieg et al. 2018)</span>
+<span class="citation">(Weber et al. 2019)</span>.</p>
+<p>The analysis protocol is as the following:</p>
+<ol style="list-style-type: decimal">
+<li>The data was first downloaded using the HDCytoData package, after
+which an arcsinh transformation with a cofactor of 5 was applied.</li>
+<li>We then used SuperCellCyto (with gamma parameter set to 20) to
+generate 4,286 supercells from 85,715 cells.</li>
+<li>We then ran cyCombine to integrate the two batches together, and
+clustered the batch-corrected supercells using FlowSOM.</li>
+<li>We then identified the clusters representing the rare monocyte
+subset based on the median expression of the aforementioned rare
+monocyte subset’s signatory markers.</li>
+<li>We then expanded the supercells back to single cells for more
+accurate cell type proportion calculation as it is highly likely for
+each supercell to contain different numbers of cells.</li>
+<li>Once we expanded the supercells back to single cells, we retained
+only clusters that contained a minimum of three cells from each sample,
+and performed a differential abundance test using Propeller, accounting
+for batch.</li>
+<li>For comparison, we also applied Propeller directly on the supercells
+without expanding them back to single cells. For consistency, we only
+compared clusters that were retained by the aforementioned filtering
+process.</li>
+</ol>
+</div>
+<div id="load-libraries" class="section level1">
+<h1>Load libraries</h1>
+<pre class="r"><code>library(data.table)
+library(ggplot2)
+library(limma)
+library(speckle)
+library(SuperCellCyto)
+library(parallel)
+library(here)
+library(BiocParallel)
+library(Spectre)
+library(pheatmap)
+library(scales)
+library(cyCombine)
+library(HDCytoData)
+library(ggrepel)
+library(ggridges)</code></pre>
+</div>
+<div id="prepare-data" class="section level1">
+<h1>Prepare data</h1>
+<pre class="r"><code>sce &lt;- Krieg_Anti_PD_1_SE()
+
+cell_info &lt;- data.table(as.data.frame(rowData(sce)))
+markers &lt;- data.table(as.data.frame(colData(sce)))
+cell_dat &lt;- data.table(as.data.frame(assay(sce)))
+
+cell_dat &lt;- cbind(cell_dat, cell_info)</code></pre>
+<pre class="r"><code># keep only the cell type and cell state markers
+markers &lt;- markers[marker_class != &quot;none&quot;]
+markers_name &lt;- markers$marker_name
+
+# asinh transformation with co-factor 5
+markers_name_asinh &lt;- paste0(markers_name, &quot;_asinh_cf5&quot;)
+
+monocyte_markers &lt;- paste0(
+  c(
+    &quot;CD14&quot;, &quot;CD33&quot;, &quot;HLA-DR&quot;, &quot;ICAM-1&quot;, &quot;CD64&quot;, &quot;CD141&quot;, &quot;CD86&quot;, &quot;CD11c&quot;,
+    &quot;CD38&quot;, &quot;CD274_PDL1&quot;, &quot;CD11b&quot;
+  ),
+  &quot;_asinh_cf5&quot;
+)</code></pre>
+<pre class="r"><code>cell_dat &lt;- cell_dat[, c(markers_name, &quot;group_id&quot;, &quot;batch_id&quot;, &quot;sample_id&quot;), with = FALSE]
+
+# arc-sinh transformation with co-factor 5
+cell_dat[, (markers_name_asinh) := lapply(.SD, function(x) asinh(x / 5)), .SDcols = markers_name]
+
+# save ram, remove untransformed markers
+cell_dat[, c(markers_name) := NULL]
+
+# Change group field into factor
+cell_dat[, group_id := factor(group_id, levels = c(&quot;NR&quot;, &quot;R&quot;))]
+cell_dat[, cell_id := paste0(&quot;cell_&quot;, seq(nrow(cell_dat)))]</code></pre>
+</div>
+<div id="run-supercellcyto" class="section level1">
+<h1>Run SuperCellCyto</h1>
+<pre class="r"><code>BPPARAM &lt;- MulticoreParam(workers = detectCores() - 1, tasks = length(unique(cell_dat$sample_id)))
+
+supercell_obj &lt;- runSuperCellCyto(
+  dt = cell_dat,
+  markers = markers_name_asinh,
+  sample_colname = &quot;sample_id&quot;,
+  cell_id_colname = &quot;cell_id&quot;,
+  gam = 20,
+  BPPARAM = BPPARAM,
+  load_balancing = TRUE
+)
+
+supercell_mat &lt;- supercell_obj$supercell_expression_matrix
+supercell_cell_map &lt;- supercell_obj$supercell_cell_map
+
+sample_info &lt;- unique(cell_info)
+supercell_mat &lt;- merge.data.table(supercell_mat, sample_info)</code></pre>
+</div>
+<div id="correct-batch-effect" class="section level1">
+<h1>Correct batch effect</h1>
+<pre class="r"><code>setnames(supercell_mat, &quot;sample_id&quot;, &quot;sample&quot;)
+setnames(supercell_mat, &quot;batch_id&quot;, &quot;batch&quot;)
+
+cycombine_corrected &lt;- batch_correct(
+  df = supercell_mat[, c(markers_name_asinh, &quot;batch&quot;, &quot;sample&quot;, &quot;group_id&quot;), with = FALSE],
+  xdim = 4,
+  ydim = 4,
+  seed = 42,
+  markers = markers_name_asinh,
+  covar = &quot;group_id&quot;
+)</code></pre>
+<p>Check outcome</p>
+<pre class="r"><code>setnames(cycombine_corrected, &quot;sample&quot;, &quot;sample_id&quot;)
+make.mds.plot(data.table(cycombine_corrected), &quot;sample_id&quot;, markers_name_asinh, &quot;batch&quot;)</code></pre>
+<p><img src="figure/da_test.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>all_data &lt;- melt(cycombine_corrected, id.vars = c(&quot;batch&quot;), measure.vars = markers_name_asinh)
+all_data$variable &lt;- gsub(&quot;_asinh_cf5&quot;, &quot;&quot;, all_data$variable)
+
+ggplot(all_data, aes(x = value, y = batch, fill = batch, color = batch)) +
+  geom_density_ridges(alpha = 0.3) +
+  facet_wrap(~variable) +
+  theme_ridges() +
+  scale_x_continuous(breaks = pretty_breaks(n = 5), limits = c(-10, 10)) +
+  labs(x = &quot;Marker Expression&quot;, y = &quot;Batch&quot;, title = &quot;Distribution of Marker Expression for Corrected Supercells&quot;)</code></pre>
+<p><img src="figure/da_test.Rmd/unnamed-chunk-8-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="cluster-the-supercells-using-flowsom." class="section level1">
+<h1>Cluster the supercells using FlowSOM.</h1>
+<pre class="r"><code>cycombine_corrected &lt;- run.flowsom(
+  cycombine_corrected,
+  use.cols = markers_name_asinh,
+  xdim = 20,
+  ydim = 20,
+  meta.k = 50,
+  clust.seed = 42,
+  meta.seed = 42
+)</code></pre>
+<p>Expand to single cell.</p>
+<pre class="r"><code>cycombine_corrected$SuperCellId &lt;- supercell_mat$SuperCellId
+
+expanded_supercell &lt;- merge.data.table(
+  supercell_cell_map,
+  cycombine_corrected[, c(&quot;SuperCellId&quot;, &quot;FlowSOM_cluster&quot;, &quot;FlowSOM_metacluster&quot;, &quot;group_id&quot;, &quot;batch&quot;)],
+  by.x = &quot;SuperCellID&quot;,
+  by.y = &quot;SuperCellId&quot;
+)</code></pre>
+<p>Remove underrepresented clusters, that is those which contain less
+than 3 cells from each sample.</p>
+<pre class="r"><code>nsamples_min &lt;- nrow(sample_info)
+clust_cnt &lt;- table(expanded_supercell$FlowSOM_metacluster, expanded_supercell$Sample)
+clust_to_keep &lt;- as.numeric(names(which(rowSums(clust_cnt &gt; 3) &gt;= nsamples_min)))
+
+expanded_supercell_sub &lt;- expanded_supercell[FlowSOM_metacluster %in% clust_to_keep]
+supercell_mat_sub &lt;- cycombine_corrected[FlowSOM_metacluster %in% clust_to_keep]</code></pre>
+<p>Run propeller.</p>
+<pre class="r"><code>prop &lt;- getTransformedProps(
+  clusters = expanded_supercell_sub$FlowSOM_metacluster,
+  sample = expanded_supercell_sub$Sample
+)
+
+sample_info[, sample_id := factor(sample_id, levels = colnames(prop$Counts))]
+sample_info &lt;- sample_info[order(sample_id)]
+
+designAS &lt;- model.matrix(~ 0 + sample_info$group_id + sample_info$batch_id)
+colnames(designAS) &lt;- c(&quot;NR&quot;, &quot;R&quot;, &quot;batch29vs23&quot;)
+mycontr &lt;- makeContrasts(NR - R, levels = designAS)
+
+test_res &lt;- propeller.ttest(
+  prop.list = prop, design = designAS, contrasts = mycontr,
+  robust = TRUE, trend = FALSE, sort = TRUE
+)
+test_res</code></pre>
+<pre><code>   PropMean.NR PropMean.R PropRatio Tstatistic     P.Value        FDR
+10 0.009601792 0.03061872 0.3135922 -3.5590416 0.001892127 0.03784255
+40 0.012490330 0.02025104 0.6167749 -2.2758926 0.033632630 0.28811818
+21 0.032073310 0.05842642 0.5489522 -2.1539416 0.043217727 0.28811818
+17 0.020685505 0.03743361 0.5525918 -1.8974612 0.071837287 0.28919505
+30 0.138740444 0.11090339 1.2510027  1.8925877 0.072298763 0.28919505
+27 0.068351875 0.04645450 1.4713724  1.7678334 0.091849973 0.30616658
+49 0.054706416 0.03987415 1.3719771  1.5646622 0.132857009 0.37959145
+46 0.025689194 0.02968763 0.8653164 -1.3013122 0.207267762 0.48823441
+48 0.114438934 0.09650306 1.1858581  1.2651217 0.219705487 0.48823441
+33 0.031377087 0.04877955 0.6432426 -1.1888124 0.248003979 0.49600796
+11 0.059371391 0.05315854 1.1168741  1.0830324 0.291090138 0.51359755
+45 0.036749978 0.03030221 1.2127823  1.0448015 0.308158532 0.51359755
+50 0.012762592 0.01632280 0.7818876 -0.9181109 0.369159549 0.56793777
+5  0.033344912 0.02326277 1.4334022  0.8518347 0.404075979 0.57725140
+31 0.072462595 0.08381600 0.8645437 -0.5502847 0.588027299 0.75915363
+44 0.015964091 0.01890996 0.8442161 -0.5218560 0.607322901 0.75915363
+22 0.023587264 0.03029538 0.7785761 -0.4550988 0.653786327 0.76916038
+35 0.062025826 0.04909547 1.2633716  0.3930067 0.698341888 0.77593543
+20 0.081228254 0.07990172 1.0166021 -0.2751488 0.785935918 0.82730097
+19 0.094348211 0.09600308 0.9827624  0.1281642 0.899240178 0.89924018</code></pre>
+<p>Identify which clusters are our rare monocyte.</p>
+<pre class="r"><code>median_exp &lt;- supercell_mat_sub[, lapply(.SD, median), by = FlowSOM_metacluster, .SDcols = markers_name_asinh]
+median_exp[, FlowSOM_metacluster := factor(FlowSOM_metacluster, levels = rownames(test_res))]
+median_exp &lt;- median_exp[order(FlowSOM_metacluster)]
+median_exp_df &lt;- data.frame(median_exp[, markers_name_asinh, with = FALSE])
+names(median_exp_df) &lt;- gsub(&quot;_asinh_cf5&quot;, &quot;&quot;, markers_name_asinh)
+rownames(median_exp_df) &lt;- median_exp$FlowSOM_metacluster
+
+row_meta &lt;- data.table(pval = test_res$FDR)
+row_meta[, DA_sig := ifelse(pval &lt;= 0.1, &quot;yes&quot;, &quot;no&quot;)]
+row_meta &lt;- data.frame(DA_sig = row_meta$DA_sig)
+rownames(row_meta) &lt;- rownames(test_res)
+
+col_meta &lt;- data.table(marker = markers_name_asinh)
+col_meta[, monocyte_marker := ifelse(marker %in% monocyte_markers, &quot;yes&quot;, &quot;no&quot;)]
+col_meta_df &lt;- data.frame(monocyte_marker = col_meta$monocyte)
+rownames(col_meta_df) &lt;- gsub(&quot;_asinh_cf5&quot;, &quot;&quot;, col_meta$marker)
+
+# So monocyte markers are together
+col_order &lt;- col_meta[order(monocyte_marker)]$marker
+col_order &lt;- gsub(&quot;_asinh_cf5&quot;, &quot;&quot;, col_order)
+median_exp_df &lt;- median_exp_df[col_order]
+
+pheatmap(
+  mat = median_exp_df,
+  annotation_row = row_meta,
+  annotation_col = col_meta_df,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  annotation_colors = list(
+    monocyte_marker = c(&quot;yes&quot; = &quot;darkgreen&quot;, &quot;no&quot; = &quot;grey&quot;),
+    DA_sig = c(&quot;yes&quot; = &quot;red&quot;, &quot;no&quot; = &quot;grey&quot;)
+  ),
+  main = &quot;Median expression of markers for each cluster&quot;
+)</code></pre>
+<p><img src="figure/da_test.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Cluster 10 is our monocyte cluster. Plot the proportion of single
+cells in the cluster out.</p>
+<pre class="r"><code>dt_prop &lt;- merge.data.table(
+  x = data.table(prop$Proportions),
+  y = sample_info,
+  by.x = &quot;sample&quot;,
+  by.y = &quot;sample_id&quot;
+)
+
+sig_clust &lt;- rownames(test_res[test_res$FDR &lt;= 0.1, ])
+
+dt_prop &lt;- dt_prop[clusters %in% sig_clust, ]
+dt_prop[, clusters := paste0(&quot;cluster_&quot;, clusters)]</code></pre>
+<pre class="r"><code>ggplot(dt_prop, aes(x = group_id, y = N, color = group_id)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point() +
+  facet_wrap(~clusters) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(
+    x = &quot;Group&quot;, y = &quot;Proportion of cells&quot;,
+    title = &quot;Proportion of cells for differentially abundant clusters&quot;,
+    colour = &quot;Group&quot;
+  )</code></pre>
+<p><img src="figure/da_test.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="da-test-at-the-supercell-level" class="section level1">
+<h1>DA test at the supercell level</h1>
+<pre class="r"><code>supercell_mat_sub_sup &lt;- cycombine_corrected[FlowSOM_metacluster %in% unique(expanded_supercell_sub$FlowSOM_metacluster)]</code></pre>
+<p>Run propeller.</p>
+<pre class="r"><code>prop_sup &lt;- getTransformedProps(
+  clusters = supercell_mat_sub_sup$FlowSOM_metacluster,
+  sample = supercell_mat_sub_sup$sample_id
+)
+
+sample_info[, sample_id := factor(sample_id, levels = colnames(prop$Counts))]
+sample_info &lt;- sample_info[order(sample_id)]
+
+designAS &lt;- model.matrix(~ 0 + sample_info$group_id + sample_info$batch_id)
+colnames(designAS) &lt;- c(&quot;NR&quot;, &quot;R&quot;, &quot;batch29vs23&quot;)
+mycontr &lt;- makeContrasts(NR - R, levels = designAS)
+
+test_res_sup &lt;- propeller.ttest(
+  prop.list = prop_sup, design = designAS, contrasts = mycontr,
+  robust = TRUE, trend = FALSE, sort = TRUE
+)
+test_res_sup</code></pre>
+<pre><code>   PropMean.NR PropMean.R PropRatio Tstatistic      P.Value        FDR
+10  0.01242160 0.03537876 0.3511034 -3.8665793 0.0007382332 0.01476466
+21  0.03282321 0.05509045 0.5958058 -2.6861763 0.0129125170 0.12912517
+40  0.02105237 0.03275724 0.6426785 -2.3012949 0.0303700871 0.20246725
+33  0.03278675 0.05073134 0.6462820 -2.1044489 0.0460027538 0.23001377
+17  0.02496436 0.03564663 0.7003287 -1.6750461 0.1069151624 0.36475812
+48  0.11246613 0.09408360 1.1953850  1.6624971 0.1094274357 0.36475812
+27  0.07123458 0.05376325 1.3249678  1.4873917 0.1499399750 0.38053665
+30  0.10484325 0.08977834 1.1678011  1.4787712 0.1522146584 0.38053665
+49  0.06808453 0.05579387 1.2202870  1.2961670 0.2072509950 0.43214793
+35  0.06157595 0.04799909 1.2828566  1.2705510 0.2160739634 0.43214793
+50  0.02287560 0.02715139 0.8425202 -1.2020423 0.2410802597 0.43832774
+11  0.05813022 0.05230540 1.1113618  1.0845044 0.2889217062 0.48153618
+46  0.03550831 0.04058908 0.8748241 -0.9349789 0.3591171173 0.55248787
+5   0.04231664 0.03278286 1.2908159  0.8662153 0.3949541354 0.56422019
+20  0.06041808 0.06893079 0.8765035 -0.8065465 0.4301517762 0.57353570
+31  0.06161053 0.05263699 1.1704797  0.6775355 0.5045494340 0.63068679
+19  0.08478672 0.08425002 1.0063704  0.4020548 0.6912038560 0.80299631
+22  0.02607141 0.02868215 0.9089767 -0.3590531 0.7226966809 0.80299631
+44  0.02393346 0.02145948 1.1152859  0.2476044 0.8065477403 0.84899762
+45  0.04209632 0.04018926 1.0474518  0.1489623 0.8828286910 0.88282869</code></pre>
+<p>Compare the FDR</p>
+<pre class="r"><code>common_clusters &lt;- intersect(rownames(test_res), rownames(test_res_sup))
+pvalue_comparison &lt;- data.table(
+  clusters = common_clusters,
+  pval_single_cell = test_res[common_clusters, ]$FDR,
+  pval_supercell = test_res_sup[common_clusters, ]$FDR
+)
+pvalue_comparison[, pval_single_cell_sig := ifelse(pval_single_cell &lt;= 0.1, &quot;yes&quot;, &quot;no&quot;)]
+pvalue_comparison[, pval_supercell_sig := ifelse(pval_supercell &lt;= 0.1, &quot;yes&quot;, &quot;no&quot;)]
+
+pvalue_comparison[, clusters := paste0(&quot;cluster_&quot;, clusters)]
+
+pvalue_comparison_molten &lt;- melt(pvalue_comparison,
+  id.vars = &quot;clusters&quot;,
+  measure.vars = c(&quot;pval_single_cell&quot;, &quot;pval_supercell&quot;)
+)
+pvalue_comparison_molten[, variable := gsub(&quot;pval_&quot;, &quot;&quot;, variable)]
+pvalue_comparison_molten[, log_val := -log10(value)]</code></pre>
+<pre class="r"><code>ggplot(pvalue_comparison_molten, aes(x = clusters, y = log_val, color = variable)) +
+  geom_point(alpha = 0.5, size = 3) +
+  geom_hline(yintercept = -log10(0.1), linetype = &quot;dashed&quot;, color = &quot;red&quot;) +
+  scale_color_manual(values = c(&quot;single_cell&quot; = &quot;blue&quot;, &quot;supercell&quot; = &quot;black&quot;)) +
+  scale_y_continuous(breaks = pretty_breaks(n = 10)) +
+  labs(
+    x = &quot;Cluster&quot;, y = &quot;-log10(FDR)&quot;, colour = &quot;Test level&quot;,
+    title = &quot;Comparison of FDR obtained for DA test performed at single cell or supercell level&quot;
+  ) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))</code></pre>
+<p><img src="figure/da_test.Rmd/unnamed-chunk-19-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The difference in proportion of supercells for our rare monocyte
+subset (cluster 10) is also significant. Let’s plot it out.</p>
+<pre class="r"><code>clust_to_look &lt;- c(10)
+
+supercell_prop &lt;- data.table(prop_sup$Proportions)
+supercell_prop &lt;- supercell_prop[clusters %in% clust_to_look]
+supercell_prop[, type := &quot;supercell&quot;]
+supercell_prop &lt;- merge.data.table(supercell_prop, sample_info, by.x = &quot;sample&quot;, by.y = &quot;sample_id&quot;)
+supercell_prop[, clusters := paste0(&quot;cluster_&quot;, clusters)]</code></pre>
+<pre class="r"><code>ggplot(supercell_prop, aes(x = group_id, y = N, color = group_id)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point() +
+  facet_wrap(~clusters) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(x = &quot;Group&quot;, y = &quot;Proportion of supercells&quot;, colour = &quot;Group&quot;)</code></pre>
+<p><img src="figure/da_test.Rmd/unnamed-chunk-21-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-krieg2018high" class="csl-entry">
+Krieg, Carsten, Malgorzata Nowicka, Silvia Guglietta, Sabrina Schindler,
+Felix J Hartmann, Lukas M Weber, Reinhard Dummer, Mark D Robinson,
+Mitchell P Levesque, and Burkhard Becher. 2018. <span>“High-Dimensional
+Single-Cell Analysis Predicts Response to Anti-PD-1
+Immunotherapy.”</span> <em>Nature Medicine</em> 24 (2): 144–53.
+</div>
+<div id="ref-phipson2022propeller" class="csl-entry">
+Phipson, Belinda, Choon Boon Sim, Enzo R Porrello, Alex W Hewitt, Joseph
+Powell, and Alicia Oshlack. 2022. <span>“Propeller: Testing for
+Differences in Cell Type Proportions in Single Cell Data.”</span>
+<em>Bioinformatics</em> 38 (20): 4720–26.
+</div>
+<div id="ref-weber2019diffcyt" class="csl-entry">
+Weber, Lukas M, Malgorzata Nowicka, Charlotte Soneson, and Mark D
+Robinson. 2019. <span>“Diffcyt: Differential Discovery in
+High-Dimensional Cytometry via High-Resolution Clustering.”</span>
+<em>Communications Biology</em> 2 (1): 183.
+</div>
+</div>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.2.3 (2023-03-15)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Monterey 12.6
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats4    parallel  stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] FlowSOM_2.6.0               igraph_1.4.0               
+ [3] ggridges_0.5.4              ggrepel_0.9.3              
+ [5] HDCytoData_1.18.0           flowCore_2.10.0            
+ [7] SummarizedExperiment_1.28.0 Biobase_2.58.0             
+ [9] GenomicRanges_1.50.2        GenomeInfoDb_1.34.9        
+[11] IRanges_2.32.0              S4Vectors_0.36.1           
+[13] MatrixGenerics_1.10.0       matrixStats_0.63.0         
+[15] ExperimentHub_2.6.0         AnnotationHub_3.6.0        
+[17] BiocFileCache_2.6.1         dbplyr_2.3.0               
+[19] BiocGenerics_0.44.0         cyCombine_0.2.15           
+[21] scales_1.2.1                pheatmap_1.0.12            
+[23] Spectre_1.0.0-0             BiocParallel_1.32.5        
+[25] here_1.0.1                  SuperCellCyto_0.99.0       
+[27] speckle_0.99.7              limma_3.54.1               
+[29] ggplot2_3.4.1               data.table_1.14.8          
+[31] workflowr_1.7.0            
+
+loaded via a namespace (and not attached):
+  [1] rappdirs_0.3.3                scattermore_0.8              
+  [3] SeuratObject_4.1.3            tidyr_1.3.0                  
+  [5] bit64_4.0.5                   knitr_1.42                   
+  [7] irlba_2.3.5.1                 DelayedArray_0.24.0          
+  [9] KEGGREST_1.38.0               RCurl_1.98-1.10              
+ [11] generics_0.1.3                callr_3.7.3                  
+ [13] cowplot_1.1.1                 RSQLite_2.3.0                
+ [15] RANN_2.6.1                    future_1.31.0                
+ [17] bit_4.0.5                     spatstat.data_3.0-0          
+ [19] httpuv_1.6.9                  assertthat_0.2.1             
+ [21] viridis_0.6.2                 xfun_0.39                    
+ [23] jquerylib_0.1.4               evaluate_0.20                
+ [25] SuperCell_1.0                 promises_1.2.0.1             
+ [27] fansi_1.0.4                   DBI_1.1.3                    
+ [29] htmlwidgets_1.6.1             spatstat.geom_3.0-6          
+ [31] purrr_1.0.1                   ellipsis_0.3.2               
+ [33] dplyr_1.1.0                   ggnewscale_0.4.8             
+ [35] ggpubr_0.6.0                  backports_1.4.1              
+ [37] cytolib_2.10.0                annotate_1.76.0              
+ [39] deldir_1.0-6                  vctrs_0.5.2                  
+ [41] SingleCellExperiment_1.20.0   ROCR_1.0-11                  
+ [43] abind_1.4-5                   cachem_1.0.6                 
+ [45] withr_2.5.0                   ggforce_0.4.1                
+ [47] progressr_0.13.0              sctransform_0.3.5            
+ [49] goftest_1.2-3                 cluster_2.1.4                
+ [51] lazyeval_0.2.2                crayon_1.5.2                 
+ [53] genefilter_1.80.3             spatstat.explore_3.0-6       
+ [55] edgeR_3.40.2                  pkgconfig_2.0.3              
+ [57] labeling_0.4.2                tweenr_2.0.2                 
+ [59] nlme_3.1-162                  rlang_1.0.6                  
+ [61] globals_0.16.2                lifecycle_1.0.3              
+ [63] miniUI_0.1.1.1                filelock_1.0.2               
+ [65] rsvd_1.0.5                    rprojroot_2.0.3              
+ [67] polyclip_1.10-4               lmtest_0.9-40                
+ [69] Matrix_1.5-3                  carData_3.0-5                
+ [71] zoo_1.8-11                    whisker_0.4.1                
+ [73] processx_3.8.0                png_0.1-8                    
+ [75] viridisLite_0.4.1             bitops_1.0-7                 
+ [77] getPass_0.2-2                 ConsensusClusterPlus_1.62.0  
+ [79] KernSmooth_2.23-20            Biostrings_2.66.0            
+ [81] blob_1.2.3                    stringr_1.5.0                
+ [83] parallelly_1.34.0             spatstat.random_3.1-3        
+ [85] rstatix_0.7.2                 ggsignif_0.6.4               
+ [87] memoise_2.0.1                 magrittr_2.0.3               
+ [89] plyr_1.8.8                    ica_1.0-3                    
+ [91] zlibbioc_1.44.0               compiler_4.2.3               
+ [93] RColorBrewer_1.1-3            fitdistrplus_1.1-8           
+ [95] cli_3.6.0                     XVector_0.38.0               
+ [97] listenv_0.9.0                 patchwork_1.1.2              
+ [99] pbapply_1.7-0                 ps_1.7.2                     
+[101] MASS_7.3-58.2                 mgcv_1.8-42                  
+[103] tidyselect_1.2.0              stringi_1.7.12               
+[105] RProtoBufLib_2.10.0           highr_0.10                   
+[107] yaml_2.3.7                    locfit_1.5-9.7               
+[109] grid_4.2.3                    sass_0.4.5                   
+[111] tools_4.2.3                   future.apply_1.10.0          
+[113] rstudioapi_0.14               git2r_0.31.0                 
+[115] gridExtra_2.3                 farver_2.1.1                 
+[117] Rtsne_0.16                    digest_0.6.31                
+[119] BiocManager_1.30.19           shiny_1.7.4                  
+[121] Rcpp_1.0.10                   car_3.1-1                    
+[123] broom_1.0.3                   BiocVersion_3.16.0           
+[125] later_1.3.0                   RcppAnnoy_0.0.20             
+[127] httr_1.4.4                    AnnotationDbi_1.60.0         
+[129] colorspace_2.1-0              XML_3.99-0.13                
+[131] fs_1.6.1                      tensor_1.5                   
+[133] reticulate_1.28               splines_4.2.3                
+[135] statmod_1.5.0                 uwot_0.1.14                  
+[137] spatstat.utils_3.0-1          sp_1.6-0                     
+[139] plotly_4.10.1                 xtable_1.8-4                 
+[141] jsonlite_1.8.4                R6_2.5.1                     
+[143] pillar_1.8.1                  htmltools_0.5.4              
+[145] mime_0.12                     glue_1.6.2                   
+[147] fastmap_1.1.0                 interactiveDisplayBase_1.36.0
+[149] codetools_0.2-19              utf8_1.2.3                   
+[151] lattice_0.20-45               bslib_0.4.2                  
+[153] spatstat.sparse_3.0-0         tibble_3.1.8                 
+[155] sva_3.46.0                    curl_5.0.0                   
+[157] leiden_0.4.3                  colorRamps_2.3.1             
+[159] kohonen_3.0.11                survival_3.5-3               
+[161] rmarkdown_2.20                munsell_0.5.0                
+[163] GenomeInfoDbData_1.2.9        reshape2_1.4.4               
+[165] gtable_0.3.1                  Seurat_4.3.0                 </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

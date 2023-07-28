@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Givanna Putri" />
+
+<meta name="date" content="2023-05-26" />
+
+<title>Efficient Cell Type Label Transfer Between CITEseq and Cytometry Data</title>
+
+<script src="site_libs/header-attrs-2.20/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">SuperCellCyto_analysis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Efficient Cell Type Label Transfer Between
+CITEseq and Cytometry Data</h1>
+<h4 class="author">Givanna Putri</h4>
+<h4 class="date">2023-05-26</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2023-07-28
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>SuperCellCyto-analysis/</code>
+<span class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.0). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed42code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(42)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed42code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(42)</code> was run prior to running the
+code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrong402358b">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong> 402358b
+</a>
+</p>
+</div>
+<div id="strongRepositoryversionstrong402358b"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version 402358b.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rproj.user/
+    Ignored:    code/.DS_Store
+    Ignored:    data/.DS_Store
+    Ignored:    data/bodenmiller_cytof/
+    Ignored:    data/explore_supercell_purity_clustering/
+    Ignored:    data/haas_bm/
+    Ignored:    data/oetjen_bm_dataset/
+    Ignored:    data/trussart_cytofruv/
+    Ignored:    output/.DS_Store
+    Ignored:    output/bodenmiller_cytof/
+    Ignored:    output/explore_supercell_purity_clustering/
+    Ignored:    output/label_transfer/
+    Ignored:    output/oetjen_b_cell_panel/
+    Ignored:    output/trussart_cytofruv/
+
+Untracked files:
+    Untracked:  README.html
+    Untracked:  analysis/ref.bib
+    Untracked:  code/README.html
+    Untracked:  code/b_cell_identification/
+    Untracked:  code/batch_correction/
+    Untracked:  code/bodenmiller_data/
+    Untracked:  code/explore_supercell_purity_clustering/
+    Untracked:  code/label_transfer/
+    Untracked:  data/README.html
+    Untracked:  output/README.html
+
+Unstaged changes:
+    Modified:   .gitignore
+    Modified:   README.md
+    Modified:   _workflowr.yml
+    Modified:   analysis/_site.yml
+    Modified:   code/README.md
+    Modified:   data/README.md
+    Modified:   output/README.md
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/label_transfer.Rmd</code>) and
+HTML (<code>docs/label_transfer.html</code>) files. If you’ve configured
+a remote Git repository (see <code>?wflow_git_remote</code>), click on
+the hyperlinks in the table below to view the files as they were in that
+past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+402358b
+</td>
+<td>
+Givanna Putri
+</td>
+<td>
+2023-07-28
+</td>
+<td>
+wflow_publish(c("analysis/*Rmd"))
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In this analysis, we explore the potential of implementing a cell
+type label transfer workflow from a CITEseq dataset onto a collection of
+supercells derived from a cytometry data.</p>
+<p>The reference CITEseq data used in this study is obtained from a bone
+marrow sample of a healthy adult, quantified using AbSeq <span
+class="citation">(Triana et al. 2021)</span></p>
+<p>For cytometry data, we utilised a healthy bone marrow sample <span
+class="citation">(Levine et al. 2015)</span> from a benchmarking study
+on clustering <span class="citation">(Weber and Robinson
+2016)</span>.</p>
+<p>The label transfer workflow is as the following. For the cytometry
+data, we began with transforming markers using an arcsinh transformation
+with a co-factor of 5, while for the CITEseq data, we used Centered Log
+Ratio (CLR) transformation. Subsequently, SuperCellCyto was applied with
+a gamma value of 20. Following this, for both the supercells and CITEseq
+data, we retain only the common proteins/markers. Lastly, we utilised
+either the Seurat rPCA <span class="citation">(Hao et al. 2021)</span>
+or Harmony <span class="citation">(Korsunsky et al. 2019)</span> and
+k-Nearest Neighbor (kNN) methods to perform the label tranfer. For the
+latter, Harmony was employed for integration the supercell with the
+CITEseq data, while kNN was employed assigning supercell with the cell
+type annotation in the CITEseq data.</p>
+<p>The scripts necessary to replicate the workflow are available in
+<code>code/label_transfer</code> directory.</p>
+<p>The ensuing results are derived from the aforementioned workflow
+application.</p>
+</div>
+<div id="load-libraries" class="section level1">
+<h1>Load libraries</h1>
+<pre class="r"><code>library(pheatmap)
+library(data.table)
+library(viridis)
+library(scales)
+library(ggplot2)
+library(RColorBrewer)
+library(here)</code></pre>
+</div>
+<div id="load-data" class="section level1">
+<h1>Load data</h1>
+<pre class="r"><code>harmony_res &lt;- fread(here(&quot;output&quot;, &quot;label_transfer&quot;, &quot;harmony_knn.csv&quot;))
+rpca_res &lt;- fread(here(&quot;output&quot;, &quot;label_transfer&quot;, &quot;seurat_rPCA.csv&quot;))</code></pre>
+<p>We shall remove the unassigned cells as we don’t know their
+identity.</p>
+<pre class="r"><code>harmony_res &lt;- harmony_res[Gated_Population != &quot;unassigned&quot;]
+rpca_res &lt;- rpca_res[Gated_Population != &quot;unassigned&quot;]</code></pre>
+</div>
+<div id="harmony-with-knn" class="section level1">
+<h1>Harmony with kNN</h1>
+<p>Here, we first employ Harmony do align supercells with the CITEseq
+data, and thereafter use kNN classifier to transfer the label of the
+aligned CITEseq data to supercell.</p>
+<pre class="r"><code>conf_mat &lt;- with(harmony_res, table(predicted_population, Gated_Population))
+conf_mat_proportion &lt;- sweep(conf_mat, 2, colSums(conf_mat), &quot;/&quot;)
+conf_mat_dt &lt;- data.table(conf_mat_proportion)
+conf_mat_dt &lt;- conf_mat_dt[order(Gated_Population, predicted_population)]
+conf_mat_dt &lt;- conf_mat_dt[N &gt; 0]</code></pre>
+<pre class="r"><code>ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
+  geom_point(aes(size = N, fill = N), pch=21, color=&quot;grey&quot;) +
+  scale_fill_distiller(palette = &quot;RdBu&quot;, direction = -1) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(colour = &quot;black&quot;, fill=NA, linewidth=0.5),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    panel.grid.major = element_blank()
+  ) +
+  labs(x = &quot;Actual Label&quot;, y = &quot;Predicted Label&quot;, size = &quot;Proportion&quot;, fill = &quot;Proportion&quot;,
+       title = &quot;Harmony Combined with kNN&quot;)</code></pre>
+<p><img src="figure/label_transfer.Rmd/unnamed-chunk-5-1.png" width="1056" style="display: block; margin: auto;" /></p>
+</div>
+<div id="rpca" class="section level1">
+<h1>rPCA</h1>
+<pre class="r"><code>conf_mat &lt;- with(rpca_res, table(predicted_population, Gated_Population))
+conf_mat_proportion &lt;- sweep(conf_mat, 2, colSums(conf_mat), &quot;/&quot;)
+conf_mat_dt &lt;- data.table(conf_mat_proportion)
+conf_mat_dt &lt;- conf_mat_dt[order(Gated_Population, predicted_population)]
+conf_mat_dt &lt;- conf_mat_dt[N &gt; 0]</code></pre>
+<pre class="r"><code>ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
+  geom_point(aes(size = N, fill = N), pch=21, color=&quot;grey&quot;) +
+  scale_fill_distiller(palette = &quot;RdBu&quot;, direction = -1) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(colour = &quot;black&quot;, fill=NA, linewidth=0.5),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    panel.grid.major = element_blank()
+  ) +
+  labs(x = &quot;Actual Label&quot;, y = &quot;Predicted Label&quot;, size = &quot;Proportion&quot;, fill = &quot;Proportion&quot;,
+       title = &quot;Seurat rPCA&quot;)</code></pre>
+<p><img src="figure/label_transfer.Rmd/unnamed-chunk-7-1.png" width="1056" style="display: block; margin: auto;" /></p>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-seuratv4" class="csl-entry">
+Hao, Yuhan, Stephanie Hao, Erica Andersen-Nissen, William M. Mauck III,
+Shiwei Zheng, Andrew Butler, Maddie J. Lee, et al. 2021.
+<span>“Integrated Analysis of Multimodal Single-Cell Data.”</span>
+<em>Cell</em>. <a
+href="https://doi.org/10.1016/j.cell.2021.04.048">https://doi.org/10.1016/j.cell.2021.04.048</a>.
+</div>
+<div id="ref-korsunsky2019fast" class="csl-entry">
+Korsunsky, Ilya, Nghia Millard, Jean Fan, Kamil Slowikowski, Fan Zhang,
+Kevin Wei, Yuriy Baglaenko, Michael Brenner, Po-ru Loh, and Soumya
+Raychaudhuri. 2019. <span>“Fast, Sensitive and Accurate Integration of
+Single-Cell Data with Harmony.”</span> <em>Nature Methods</em> 16 (12):
+1289–96.
+</div>
+<div id="ref-levine2015data" class="csl-entry">
+Levine, Jacob H, Erin F Simonds, Sean C Bendall, Kara L Davis, D Amir
+El-ad, Michelle D Tadmor, Oren Litvin, et al. 2015. <span>“Data-Driven
+Phenotypic Dissection of AML Reveals Progenitor-Like Cells That
+Correlate with Prognosis.”</span> <em>Cell</em> 162 (1): 184–97.
+</div>
+<div id="ref-triana2021single" class="csl-entry">
+Triana, Sergio, Dominik Vonficht, Lea Jopp-Saile, Simon Raffel, Raphael
+Lutz, Daniel Leonce, Magdalena Antes, et al. 2021. <span>“Single-Cell
+Proteo-Genomic Reference Maps of the Hematopoietic System Enable the
+Purification and Massive Profiling of Precisely Defined Cell
+States.”</span> <em>Nature Immunology</em> 22 (12): 1577–89.
+</div>
+<div id="ref-weber2016comparison" class="csl-entry">
+Weber, Lukas M, and Mark D Robinson. 2016. <span>“Comparison of
+Clustering Methods for High-Dimensional Single-Cell Flow and Mass
+Cytometry Data.”</span> <em>Cytometry Part A</em> 89 (12): 1084–96.
+</div>
+</div>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.2.3 (2023-03-15)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Monterey 12.6
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] here_1.0.1         RColorBrewer_1.1-3 ggplot2_3.4.1      scales_1.2.1      
+[5] viridis_0.6.2      viridisLite_0.4.1  data.table_1.14.8  pheatmap_1.0.12   
+[9] workflowr_1.7.0   
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.2.0 xfun_0.39        bslib_0.4.2      colorspace_2.1-0
+ [5] vctrs_0.5.2      generics_0.1.3   htmltools_0.5.4  yaml_2.3.7      
+ [9] utf8_1.2.3       rlang_1.0.6      jquerylib_0.1.4  later_1.3.0     
+[13] pillar_1.8.1     glue_1.6.2       withr_2.5.0      lifecycle_1.0.3 
+[17] stringr_1.5.0    munsell_0.5.0    gtable_0.3.1     evaluate_0.20   
+[21] labeling_0.4.2   knitr_1.42       callr_3.7.3      fastmap_1.1.0   
+[25] httpuv_1.6.9     ps_1.7.2         fansi_1.0.4      highr_0.10      
+[29] Rcpp_1.0.10      promises_1.2.0.1 cachem_1.0.6     jsonlite_1.8.4  
+[33] farver_2.1.1     fs_1.6.1         gridExtra_2.3    digest_0.6.31   
+[37] stringi_1.7.12   processx_3.8.0   dplyr_1.1.0      getPass_0.2-2   
+[41] rprojroot_2.0.3  grid_4.2.3       cli_3.6.0        tools_4.2.3     
+[45] magrittr_2.0.3   sass_0.4.5       tibble_3.1.8     whisker_0.4.1   
+[49] pkgconfig_2.0.3  rmarkdown_2.20   httr_1.4.4       rstudioapi_0.14 
+[53] R6_2.5.1         git2r_0.31.0     compiler_4.2.3  </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

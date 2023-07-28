@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Givanna Putri" />
+
+<meta name="date" content="2023-05-23" />
+
+<title>Supercells Preserve Biological Heterogeneity and Facilitate Efficient Cell Type Identification</title>
+
+<script src="site_libs/header-attrs-2.20/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">SuperCellCyto_analysis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Supercells Preserve Biological
+Heterogeneity and Facilitate Efficient Cell Type Identification</h1>
+<h4 class="author">Givanna Putri</h4>
+<h4 class="date">2023-05-23</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2023-07-28
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>SuperCellCyto-analysis/</code>
+<span class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.0). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed42code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(42)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed42code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(42)</code> was run prior to running the
+code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrong402358b">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong> 402358b
+</a>
+</p>
+</div>
+<div id="strongRepositoryversionstrong402358b"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version 402358b.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rproj.user/
+    Ignored:    code/.DS_Store
+    Ignored:    data/.DS_Store
+    Ignored:    data/bodenmiller_cytof/
+    Ignored:    data/explore_supercell_purity_clustering/
+    Ignored:    data/haas_bm/
+    Ignored:    data/oetjen_bm_dataset/
+    Ignored:    data/trussart_cytofruv/
+    Ignored:    output/.DS_Store
+    Ignored:    output/bodenmiller_cytof/
+    Ignored:    output/explore_supercell_purity_clustering/
+    Ignored:    output/label_transfer/
+    Ignored:    output/oetjen_b_cell_panel/
+    Ignored:    output/trussart_cytofruv/
+
+Untracked files:
+    Untracked:  README.html
+    Untracked:  analysis/ref.bib
+    Untracked:  code/README.html
+    Untracked:  code/b_cell_identification/
+    Untracked:  code/batch_correction/
+    Untracked:  code/bodenmiller_data/
+    Untracked:  code/explore_supercell_purity_clustering/
+    Untracked:  code/label_transfer/
+    Untracked:  data/README.html
+    Untracked:  output/README.html
+
+Unstaged changes:
+    Modified:   .gitignore
+    Modified:   README.md
+    Modified:   _workflowr.yml
+    Modified:   analysis/_site.yml
+    Modified:   code/README.md
+    Modified:   data/README.md
+    Modified:   output/README.md
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown
+(<code>analysis/explore_supercell_purity_clustering.Rmd</code>) and HTML
+(<code>docs/explore_supercell_purity_clustering.html</code>) files. If
+you’ve configured a remote Git repository (see
+<code>?wflow_git_remote</code>), click on the hyperlinks in the table
+below to view the files as they were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+402358b
+</td>
+<td>
+Givanna Putri
+</td>
+<td>
+2023-07-28
+</td>
+<td>
+wflow_publish(c("analysis/*Rmd"))
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>We assessed whether supercells could preserve the biological
+diversity inherent in a dataset, and whether the clustering of
+supercells could expedite the process of cell type identification
+without compromising accuracy.</p>
+</div>
+<div id="datasets" class="section level1">
+<h1>Datasets</h1>
+<p>We ran SuperCellCyto on two publicly accessible cytometry datasets
+from Weber and Robinson’s clustering benchmarking study <span
+class="citation">(Weber and Robinson 2016)</span>.</p>
+<p>The cell type annotation were done using manual gating by an
+immunologist.</p>
+<ul>
+<li><p>Levine_32dim dataset <span class="citation">(Levine et al.
+2015)</span> measures the expression of 32 markers in bone marrow cells
+from healthy human donors, comprised of 2 samples, 265,627 cells, and 14
+cell types, with cell type labels assigned to 39% (104,184) of
+cells.</p></li>
+<li><p>Samusik_all dataset <span class="citation">(Samusik et al.
+2016)</span> quantifies the expression of 39 markers in bone marrow
+cells from healthy mice. There are 10 samples, 841,644 cells, and 24
+cell types, with cell type labels assigned to 61% (514,386) of
+cells.</p></li>
+</ul>
+<p>The R scripts required to run SuperCellCyto and perform clustering
+can be found in the
+<code>code/explore_supercell_purity_clustering</code> directory.</p>
+<div id="load-libraries-and-data" class="section level2">
+<h2>Load libraries and data</h2>
+<pre class="r"><code>library(data.table)
+library(ggplot2)
+library(scales)
+library(here)
+library(stringr)
+library(ggridges)
+library(viridis)</code></pre>
+<pre class="r"><code>levine_res_dir &lt;- here(&quot;output&quot;, &quot;explore_supercell_purity_clustering&quot;,
+                       &quot;20230511&quot;, &quot;levine_32dim&quot;)
+samusik_res_dir &lt;- here(&quot;output&quot;, &quot;explore_supercell_purity_clustering&quot;,
+                        &quot;20230511&quot;, &quot;samusik_all&quot;)</code></pre>
+</div>
+</div>
+<div id="data-reduction-amount" class="section level1">
+<h1>Data Reduction Amount</h1>
+<p>How many supercells were generated per gamma value?</p>
+<pre class="r"><code>gamma &lt;- seq(5, 50, 5)
+n_supercells_levine &lt;- sapply(gamma, function(gam) {
+  nrow(fread(here(levine_res_dir, &quot;supercell_runs&quot;,
+                  paste0(&quot;supercellExpMat_gamma&quot;, gam, &quot;.csv&quot;))))
+})
+n_supercells_samusik &lt;- sapply(gamma, function(gam) {
+  nrow(fread(here(samusik_res_dir, &quot;supercell_runs&quot;,
+                  paste0(&quot;supercellExpMat_gamma&quot;, gam, &quot;.csv&quot;))))
+})
+
+n_cells_levine &lt;- nrow(fread(here(levine_res_dir, &quot;supercell_runs&quot;,
+                                  &quot;supercellCellMap_gamma5.csv&quot;)))
+n_cells_samusik &lt;- nrow(fread(here(samusik_res_dir, &quot;supercell_runs&quot;,
+                                   &quot;supercellCellMap_gamma5.csv&quot;)))
+
+n_supercells &lt;- data.table(gamma, n_supercells_levine, n_supercells_samusik)
+n_supercells</code></pre>
+<pre><code>    gamma n_supercells_levine n_supercells_samusik
+ 1:     5               53125               168328
+ 2:    10               26563                84164
+ 3:    15               17709                56109
+ 4:    20               13282                42082
+ 5:    25               10625                33666
+ 6:    30                8854                28055
+ 7:    35                7589                24048
+ 8:    40                6641                21042
+ 9:    45                5903                18702
+10:    50                5313                16832</code></pre>
+<pre class="r"><code>n_supercells_plot &lt;- data.table(
+  gamma = rep(gamma, 2),
+  n_cells = c(n_supercells_levine, n_supercells_samusik),
+  dataset = c(rep(&quot;Levine_32dim&quot;, length(gamma)),
+              rep(&quot;Samusik_all&quot;, length(gamma)))
+)
+n_supercells_plot$gamma &lt;- factor(n_supercells_plot$gamma, levels = c(gamma))
+n_supercells_plot &lt;- n_supercells_plot[order(gamma)]</code></pre>
+<pre class="r"><code>facet_labels &lt;- c(
+  &quot;Levine_32dim&quot; = paste0(&quot;Levine_32dim\n&quot;,
+                          format(n_cells_levine, big.mark = &quot;,&quot;),
+                          &quot; cells&quot;),
+  &quot;Samusik_all&quot; = paste0(&quot;Samusik_all\n&quot;,
+                         format(n_cells_samusik, big.mark = &quot;,&quot;),
+                         &quot; cells&quot;)
+)
+ggplot(n_supercells_plot, aes(x = gamma, y = n_cells)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;blue&quot;) +
+  facet_wrap(~dataset, labeller = labeller(dataset = facet_labels)) +
+  scale_y_continuous(labels = label_comma(), breaks = pretty_breaks(n = 10)) +
+  labs(
+    y = &quot;Number of supercells&quot;, x = &quot;Gamma&quot;,
+    title = &quot;Number of supercells generated per gamma value&quot;
+  ) +
+  theme_bw()</code></pre>
+<p><img src="figure/explore_supercell_purity_clustering.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="impact-of-gamma-parameters-on-supercell-purity"
+class="section level1">
+<h1>Impact of gamma parameters on Supercell Purity</h1>
+<p>We investigate how gamma parameters influence Supercell Purity. Gamma
+values determine the granularity of the Supercell with a direct
+relationship:
+<code>gamma = number of cells / number of supercells</code>. A larger
+gamma implies fewer, larger supercells (each supercell capturing more
+cells), while a smaller gamma leads to more, smaller supercells.</p>
+<pre class="r"><code>levine_purity &lt;- fread(here(levine_res_dir, &quot;evaluation&quot;,
+                            &quot;supercell_purities.csv&quot;))
+levine_purity[, data_source := &quot;Levine_32dim&quot;]
+samusik_purity &lt;- fread(here(samusik_res_dir, &quot;evaluation&quot;,
+                             &quot;supercell_purities.csv&quot;))
+samusik_purity[, data_source := &quot;Samusik_all&quot;]
+purity_scores &lt;- rbind(levine_purity, samusik_purity)
+purity_scores[, gamma := factor(gamma)]</code></pre>
+<pre class="r"><code>ggplot(purity_scores, aes(y = purity, x = gamma)) +
+  geom_violin() +
+  facet_wrap(~data_source) +
+  theme_bw() +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  labs(
+    y = &quot;Purity&quot;, x = &quot;Gamma value&quot;,
+    title = &quot;Distribution of Supercell Purity Across Gamma Values&quot;
+  )</code></pre>
+<p><img src="figure/explore_supercell_purity_clustering.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>What are the mean purity scores?</p>
+<pre class="r"><code>mean_purity &lt;- purity_scores[, .(mean_purity = mean(purity)), by = c(&quot;gamma&quot;, &quot;data_source&quot;)]
+
+ggplot(mean_purity, aes(x = gamma, y = mean_purity, fill = data_source)) +
+  geom_bar(stat = &quot;identity&quot;, position = position_dodge()) +
+  scale_fill_manual(values = c(&quot;Levine_32dim&quot; = &quot;#D22B2B&quot;, &quot;Samusik_all&quot; = &quot;#6495ED&quot;)) +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  theme_classic() +
+  labs(
+    x = &quot;Gamma value&quot;, y = &quot;Mean Purity&quot;, fill = &quot;Dataset&quot;,
+    title = &quot;Supercell Mean Purity Across Gamma Values&quot;
+  )</code></pre>
+<p><img src="figure/explore_supercell_purity_clustering.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Proportion of purity scores &lt; 0.5 across all gamma values?</p>
+<pre class="r"><code>poor_purity &lt;- purity_scores[purity &lt; 0.5, ]
+poor_purity_cnt &lt;- merge.data.table(
+  poor_purity[, .N, by = &quot;data_source&quot;],
+  purity_scores[, .N, by = &quot;data_source&quot;],
+  by = &quot;data_source&quot;,
+  suffixes = c(&quot;_poor&quot;, &quot;_all&quot;)
+)
+poor_purity_cnt[, percent := N_poor * 100 / N_all]
+
+poor_purity_cnt</code></pre>
+<pre><code>    data_source N_poor  N_all    percent
+1: Levine_32dim     56 149116 0.03755466
+2:  Samusik_all   2572 432821 0.59424104</code></pre>
+<p>For both datasets, we observed very high mean purity scores across
+all gamma values (purity &gt; 0.9), with the vast proportion of
+supercells attaining a purity score of 1. A small percentage of
+supercells (0.04% for Levine_32dim and 0.59% for Samusik_all) obtained
+purity &lt; 0.5.</p>
+</div>
+<div id="comparing-marker-expression-distribution"
+class="section level1">
+<h1>Comparing Marker Expression Distribution</h1>
+<div id="samusik-data" class="section level2">
+<h2>Samusik data</h2>
+<pre class="r"><code>markers &lt;- fread(here(
+  &quot;data&quot;, &quot;explore_supercell_purity_clustering&quot;,
+  &quot;samusik_all&quot;, &quot;samusik_all_asinh_markers_info.csv&quot;
+))
+markers &lt;- markers[marker_class != &quot;none&quot;]
+
+raw_dat &lt;- fread(here(
+  &quot;data&quot;, &quot;explore_supercell_purity_clustering&quot;,
+  &quot;samusik_all&quot;, &quot;samusik_all_asinh.csv&quot;
+))
+raw_dat$from &lt;- &quot;all_cells&quot;
+
+
+supercell_dat &lt;- rbindlist(lapply(seq(5, 50, by = 5), function(gamma_val) {
+  dt &lt;- fread(here(
+    samusik_res_dir, &quot;supercell_runs&quot;,
+    paste0(&quot;supercellExpMat_gamma&quot;, gamma_val, &quot;.csv&quot;)
+  ))
+  dt$from &lt;- gamma_val
+  return(dt[, c(&quot;from&quot;, paste0(markers$marker_name, &quot;_asinh_cf5&quot;)), with = FALSE])
+}))
+
+all_dat &lt;- rbind(supercell_dat,
+                 raw_dat[, c(&quot;from&quot;, paste0(markers$marker_name, &quot;_asinh_cf5&quot;)), with = FALSE])
+all_dat$from &lt;- factor(all_dat$from, levels = c(seq(5, 50, 5), &quot;all_cells&quot;))</code></pre>
+<pre class="r"><code>all_dat_molten &lt;- melt(all_dat, id.vars = &quot;from&quot;)
+all_dat_molten[, variable := gsub(&quot;_asinh_cf5&quot;, &quot;&quot;, variable)]
+
+ggplot(all_dat_molten, aes(x = value, y = from, colour = from, fill = from)) +
+  geom_density_ridges(alpha = 0.3) +
+  scale_colour_viridis(option = &quot;turbo&quot;, discrete = TRUE, guide = &quot;none&quot;) +
+  scale_fill_viridis(option = &quot;turbo&quot;, discrete = TRUE, guide = &quot;none&quot;) +
+  theme_ridges() +
+  facet_wrap(~variable) +
+  scale_x_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(
+    y = &quot;Gamma value&quot;, x = &quot;Marker Expression&quot;,
+    title = &quot;Distribution of Marker Expression of Supercells or Single Cells for Samusik_all&quot;
+  )</code></pre>
+<p><img src="figure/explore_supercell_purity_clustering.Rmd/unnamed-chunk-11-1.png" width="1728" style="display: block; margin: auto;" /></p>
+</div>
+<div id="levine-data" class="section level2">
+<h2>Levine data</h2>
+<pre class="r"><code>markers &lt;- fread(here(
+  &quot;data&quot;, &quot;explore_supercell_purity_clustering&quot;,
+  &quot;levine_32dim&quot;, &quot;levine_32_asinh_markers_info.csv&quot;
+))
+markers &lt;- markers[marker_class != &quot;none&quot;]
+
+raw_dat &lt;- fread(here(
+  &quot;data&quot;, &quot;explore_supercell_purity_clustering&quot;,
+  &quot;levine_32dim&quot;, &quot;levine_32_asinh.csv&quot;
+))
+raw_dat$from &lt;- &quot;all_cells&quot;
+
+
+supercell_dat &lt;- rbindlist(lapply(seq(5, 50, by = 5), function(gamma_val) {
+  dt &lt;- fread(here(
+    levine_res_dir, &quot;supercell_runs&quot;,
+    paste0(&quot;supercellExpMat_gamma&quot;, gamma_val, &quot;.csv&quot;)
+  ))
+  dt$from &lt;- gamma_val
+  return(dt[, c(&quot;from&quot;, paste0(markers$marker_name, &quot;_asinh_cf5&quot;)), with = FALSE])
+}))
+
+all_dat &lt;- rbind(supercell_dat, 
+                 raw_dat[, c(&quot;from&quot;, paste0(markers$marker_name, &quot;_asinh_cf5&quot;)), with = FALSE])
+all_dat$from &lt;- factor(all_dat$from, levels = c(seq(5, 50, 5), &quot;all_cells&quot;))</code></pre>
+<pre class="r"><code>all_dat_molten &lt;- melt(all_dat, id.vars = &quot;from&quot;)
+all_dat_molten[, variable := gsub(&quot;_asinh_cf5&quot;, &quot;&quot;, variable)]
+
+ggplot(all_dat_molten, aes(x = value, y = from, colour = from, fill = from)) +
+  geom_density_ridges(alpha = 0.3) +
+  scale_colour_viridis(option = &quot;turbo&quot;, discrete = TRUE, guide = &quot;none&quot;) +
+  scale_fill_viridis(option = &quot;turbo&quot;, discrete = TRUE, guide = &quot;none&quot;) +
+  theme_ridges() +
+  facet_wrap(~variable) +
+  scale_x_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(
+    y = &quot;Gamma value&quot;, x = &quot;Marker Expression&quot;,
+    title = &quot;Distribution of Marker Expression of Supercells or Single Cells for Levine_32dim&quot;
+  )</code></pre>
+<p><img src="figure/explore_supercell_purity_clustering.Rmd/unnamed-chunk-13-1.png" width="1728" style="display: block; margin: auto;" /></p>
+<p>The distribution of marker expression between the supercells and
+single cells are almost identical.</p>
+</div>
+</div>
+<div id="ari-between-supercell-clustering-and-ground-truth-annotation"
+class="section level1">
+<h1>ARI between Supercell Clustering and Ground Truth Annotation</h1>
+<pre class="r"><code>algo &lt;- c(&quot;flowsom&quot;, &quot;louvain&quot;)
+levine_ari &lt;- rbindlist(lapply(algo, function(alg) {
+  res &lt;- fread(here(levine_res_dir, &quot;evaluation&quot;, paste0(alg, &quot;_ari_vs_truth.csv&quot;)))
+  res &lt;- res[, c(&quot;gamma&quot;, &quot;ari&quot;), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := &quot;Levine_32dim&quot;]
+  return(res)
+}))
+samusik_ari &lt;- rbindlist(lapply(algo, function(alg) {
+  res &lt;- fread(here(samusik_res_dir, &quot;evaluation&quot;, paste0(alg, &quot;_ari_vs_truth.csv&quot;)))
+  res &lt;- res[, c(&quot;gamma&quot;, &quot;ari&quot;), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := &quot;Samusik_all&quot;]
+}))
+ari_truth &lt;- rbind(levine_ari, samusik_ari)
+ari_truth[, algorithm := ifelse(algorithm == &quot;Flowsom&quot;, &quot;FlowSOM&quot;, algorithm)]</code></pre>
+<pre class="r"><code>ggplot(ari_truth, aes(x = factor(gamma), y = ari, fill = algorithm)) +
+  geom_boxplot(outlier.size = 0.5, lwd = 0.3) +
+  facet_wrap(~dataset) +
+  theme_bw() +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  scale_fill_manual(values = c(&quot;FlowSOM&quot; = &quot;orange&quot;, &quot;Louvain&quot; = &quot;#0096FF&quot;)) +
+  labs(
+    y = &quot;Adjusted Rand Index (ARI)&quot;, x = &quot;Gamma value&quot;, fill = &quot;Algorithm&quot;,
+    title = &quot;Concordance Between Supercell Clustering and Cell Type Annotation&quot;
+  )</code></pre>
+<p><img src="figure/explore_supercell_purity_clustering.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>High scores across all datasets, clustering algorithms, and gamma
+values</p>
+</div>
+<div id="ari-between-supercell-and-single-cell-clustering"
+class="section level1">
+<h1>ARI between Supercell and Single Cell Clustering</h1>
+<pre class="r"><code>algo &lt;- c(&quot;flowsom&quot;, &quot;louvain&quot;)
+levine_ari &lt;- rbindlist(lapply(algo, function(alg) {
+  res &lt;- fread(here(levine_res_dir, &quot;evaluation&quot;, paste0(alg, &quot;_ari_vs_all.csv&quot;)))
+  res &lt;- res[, c(&quot;gamma&quot;, &quot;ari&quot;), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := &quot;Levine_32dim&quot;]
+  return(res)
+}))
+samusik_ari &lt;- rbindlist(lapply(algo, function(alg) {
+  res &lt;- fread(here(samusik_res_dir, &quot;evaluation&quot;, paste0(alg, &quot;_ari_vs_all.csv&quot;)))
+  res &lt;- res[, c(&quot;gamma&quot;, &quot;ari&quot;), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := &quot;Samusik_all&quot;]
+}))
+ari_all &lt;- rbind(levine_ari, samusik_ari)
+ari_all[, algorithm := ifelse(algorithm == &quot;Flowsom&quot;, &quot;FlowSOM&quot;, algorithm)]</code></pre>
+<pre class="r"><code>ggplot(ari_all, aes(x = factor(gamma), y = ari, fill = algorithm)) +
+  geom_boxplot(outlier.size = 0.5, lwd = 0.3) +
+  facet_wrap(~dataset) +
+  theme_bw() +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  scale_fill_manual(values = c(&quot;FlowSOM&quot; = &quot;orange&quot;, &quot;Louvain&quot; = &quot;#0096FF&quot;)) +
+  labs(
+    y = &quot;Adjusted Rand Index (ARI)&quot;, x = &quot;Gamma value&quot;, fill = &quot;Algorithm&quot;,
+    title = &quot;Concordance Between Supercell and Single Cell Clustering&quot;
+  )</code></pre>
+<p><img src="figure/explore_supercell_purity_clustering.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>High scores across all datasets, clustering algorithms, and gamma
+values.</p>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-levine2015data" class="csl-entry">
+Levine, Jacob H, Erin F Simonds, Sean C Bendall, Kara L Davis, D Amir
+El-ad, Michelle D Tadmor, Oren Litvin, et al. 2015. <span>“Data-Driven
+Phenotypic Dissection of AML Reveals Progenitor-Like Cells That
+Correlate with Prognosis.”</span> <em>Cell</em> 162 (1): 184–97.
+</div>
+<div id="ref-samusik2016automated" class="csl-entry">
+Samusik, Nikolay, Zinaida Good, Matthew H Spitzer, Kara L Davis, and
+Garry P Nolan. 2016. <span>“Automated Mapping of Phenotype Space with
+Single-Cell Data.”</span> <em>Nature Methods</em> 13 (6): 493–96.
+</div>
+<div id="ref-weber2016comparison" class="csl-entry">
+Weber, Lukas M, and Mark D Robinson. 2016. <span>“Comparison of
+Clustering Methods for High-Dimensional Single-Cell Flow and Mass
+Cytometry Data.”</span> <em>Cytometry Part A</em> 89 (12): 1084–96.
+</div>
+</div>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.2.3 (2023-03-15)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Monterey 12.6
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] viridis_0.6.2     viridisLite_0.4.1 ggridges_0.5.4    stringr_1.5.0    
+[5] here_1.0.1        scales_1.2.1      ggplot2_3.4.1     data.table_1.14.8
+[9] workflowr_1.7.0  
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.2.0 xfun_0.39        bslib_0.4.2      colorspace_2.1-0
+ [5] vctrs_0.5.2      generics_0.1.3   htmltools_0.5.4  yaml_2.3.7      
+ [9] utf8_1.2.3       rlang_1.0.6      jquerylib_0.1.4  later_1.3.0     
+[13] pillar_1.8.1     glue_1.6.2       withr_2.5.0      lifecycle_1.0.3 
+[17] munsell_0.5.0    gtable_0.3.1     evaluate_0.20    knitr_1.42      
+[21] callr_3.7.3      fastmap_1.1.0    httpuv_1.6.9     ps_1.7.2        
+[25] fansi_1.0.4      highr_0.10       Rcpp_1.0.10      promises_1.2.0.1
+[29] cachem_1.0.6     jsonlite_1.8.4   farver_2.1.1     fs_1.6.1        
+[33] gridExtra_2.3    digest_0.6.31    stringi_1.7.12   processx_3.8.0  
+[37] dplyr_1.1.0      getPass_0.2-2    rprojroot_2.0.3  grid_4.2.3      
+[41] cli_3.6.0        tools_4.2.3      magrittr_2.0.3   sass_0.4.5      
+[45] tibble_3.1.8     whisker_0.4.1    pkgconfig_2.0.3  rmarkdown_2.20  
+[49] httr_1.4.4       rstudioapi_0.14  R6_2.5.1         git2r_0.31.0    
+[53] compiler_4.2.3  </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
