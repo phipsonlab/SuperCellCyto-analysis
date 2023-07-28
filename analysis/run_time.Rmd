@@ -1,0 +1,194 @@
+---
+title: "Run time of analysis"
+author: "Givanna Putri"
+date: "2023-06-13"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+In this analysis, we examine the time required to create the supercells, as well
+as the run time improvement obtained by analysing supercells vs single cells.
+
+
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(data.table)
+library(stringr)
+library(ggplot2)
+library(scales)
+```
+
+# How long did supercell creation take?
+
+```{r}
+run_time_clust_benchmark <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
+    dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
+                            dt_source, "supercell_runs", "supercell_runtime.txt"),
+                       sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+    dt$gamma <- str_split_i(dt$dataset, "_", 2) 
+    dt$dataset <- str_to_title(dt_source)
+    dt$duration_seconds <- gsub(" sec elapsed", "", dt$duration_seconds)
+    
+    return(dt)
+})
+run_time_clust_benchmark <- rbindlist(run_time_clust_benchmark)
+```
+
+```{r}
+run_time_bcells <- fread(here("output", "oetjen_b_cell_panel", "20230511", "supercell_runtime.txt"),
+                         sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+run_time_bcells$dataset <- "Oetjen_bcells"
+run_time_bcells$duration_seconds <- gsub(" sec elapsed", "", run_time_bcells$duration_seconds)
+run_time_bcells$gamma <- "gamma20"
+```
+
+```{r}
+run_time_trussart <- fread(here("output", "trussart_cytofruv", "20230515_supercell_out", "supercell_runtime.txt"),
+                         sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+run_time_trussart$dataset <- "Trussart_cytofruv"
+run_time_trussart$duration_seconds <- gsub(" sec elapsed", "", run_time_trussart$duration_seconds)
+run_time_trussart$gamma <- "gamma20"
+```
+
+```{r}
+run_time <- rbindlist(list(run_time_clust_benchmark, run_time_bcells, run_time_trussart))
+run_time$gamma <- gsub("gamma", "", run_time$gamma)
+run_time$duration_seconds <- as.numeric(run_time$duration_seconds)
+run_time$duration_minutes <- run_time$duration_seconds / 60
+run_time$duration_hours <- run_time$duration_seconds / 3600
+```
+
+```{r}
+ggplot(run_time[dataset %in% c("Samusik_all", "Levine_32dim")], 
+       aes(x = gamma, y = duration_minutes, colour = dataset)) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Levine_32dim" = "purple", "Samusik_all" = "#FFC000")) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n=5), limits = c(2,3)) +
+  labs(y = "Duration (minutes)", x = "Gamma", color = "Dataset", title = "Time Taken to Generate Supercells")
+```
+
+```{r}
+ggplot(run_time[dataset %in% c("Oetjen_bcells", "Trussart_cytofruv")], 
+       aes(x = dataset, y = duration_minutes, colour = dataset)) +
+  geom_point() +
+  scale_color_manual(values = c("Oetjen_bcells" = "#FF5733", "Trussart_cytofruv" = "turquoise")) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n=5)) +
+  labs(y = "Duration (minutes)", x = "Dataset", color = "Dataset", title = "Time Taken to Generate Supercells")
+```
+
+# How long did Louvain clustering take?
+
+```{r}
+louvain_runtime_supercell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
+    dt <- lapply(seq(5, 50, by=5), function(gam) {
+        dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
+                         dt_source, "louvain_supercell_runs", paste0("gamma_", gam),
+                         "louvain_supercell_runtime.txt"),
+                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+        dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
+        dt$gamma <- gam
+        dt$dataset <- str_to_title(dt_source)
+        return(dt)
+    })
+    return(rbindlist(dt))
+})
+louvain_runtime_supercell <- rbindlist(louvain_runtime_supercell)
+louvain_runtime_supercell$type <- "Supercells"
+
+louvain_runtime_allcell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
+    dt <- lapply(seq(10, 30, by=5), function(k) {
+        dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
+                         dt_source, "louvain_allcells", paste0("k", k),
+                         "louvain_supercell_runtime.txt"),
+                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+        dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
+        dt$dataset <- str_to_title(dt_source)
+        return(dt)
+    })
+    return(rbindlist(dt))
+})
+louvain_runtime_allcell <- rbindlist(louvain_runtime_allcell)
+louvain_runtime_allcell$type <- "Single cells"
+
+louvain_runtime <- rbind(
+  louvain_runtime_allcell, 
+  louvain_runtime_supercell[, c("dataset", "duration_seconds", "type")]
+)
+louvain_runtime[, duration_minutes := duration_seconds / 60]
+```
+
+```{r}
+ggplot(louvain_runtime, aes(x = type, y = duration_minutes, colour = dataset)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("Levine_32dim" = "purple", "Samusik_all" = "#FFC000")) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n=20)) +
+  labs(y = "Duration (minutes)", x = "Gamma", color = "Dataset", title = "Louvain clustering run time")
+```
+
+Median run time?
+
+```{r}
+louvain_runtime[, .(median_duration_sec = median(duration_seconds), median_duration_min = median(duration_minutes)), by = c("type", "dataset")]
+```
+
+# Any improvement for FlowSOM?
+
+```{r}
+fsom_runtime_supercell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
+    dt <- lapply(seq(5, 50, by=5), function(gam) {
+        dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
+                         dt_source, "flowsom_supercell_runs", paste0("gamma_", gam),
+                         "flowsom_supercell_runtime.txt"),
+                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+        dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
+        dt$gamma <- gam
+        dt$dataset <- str_to_title(dt_source)
+        return(dt)
+    })
+    return(rbindlist(dt))
+})
+fsom_runtime_supercell <- rbindlist(fsom_runtime_supercell)
+fsom_runtime_supercell$type <- "Supercells"
+
+fsom_runtime_allcell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
+    dt <- fread(here("output", "explore_supercell_purity_clustering", "20230509", 
+                         dt_source, "flowsom_allcells", "flowsom_allcell_runtime.txt"),
+                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+    dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
+    dt$dataset <- str_to_title(dt_source)
+    return(dt)
+    return(rbindlist(dt))
+})
+fsom_runtime_allcell <- rbindlist(fsom_runtime_allcell)
+fsom_runtime_allcell$type <- "Single Cells"
+
+fsom_runtime <- rbind(
+  fsom_runtime_allcell, 
+  fsom_runtime_supercell[, c("dataset", "duration_seconds", "type")]
+)
+```
+
+```{r}
+ggplot(fsom_runtime, aes(x = type, y = duration_seconds, colour = dataset)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("Levine_32dim" = "purple", "Samusik_all" = "#FFC000")) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n=20)) +
+  labs(y = "Duration (seconds)", x = "Gamma", color = "Dataset", title = "FlowSOM clustering run time")
+
+```
+
+Median run time?
+
+```{r}
+fsom_runtime[, .(median_duration_sec = median(duration_seconds)), by = c("type", "dataset")]
+```
+
+
+

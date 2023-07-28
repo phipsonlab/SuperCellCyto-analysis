@@ -1,0 +1,115 @@
+---
+title: "Efficient Cell Type Label Transfer Between CITEseq and Cytometry Data"
+author: "Givanna Putri"
+date: "2023-05-26"
+bibliography: ref.bib
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+In this analysis, we explore the potential of implementing a cell type label transfer 
+workflow from a CITEseq dataset onto a collection of supercells derived from a cytometry data.
+
+The reference CITEseq data used in this study is obtained from a bone marrow sample of a healthy adult, quantified using AbSeq [@triana2021single]
+
+For cytometry data, we utilised a healthy bone marrow sample [@levine2015data] from a benchmarking study on clustering [@weber2016comparison].
+
+The label transfer workflow is as the following.
+For the cytometry data, we began with transforming markers using an arcsinh transformation 
+with a co-factor of 5, while for the CITEseq data, we used Centered Log Ratio (CLR) transformation.
+Subsequently, SuperCellCyto was applied with a gamma value of 20. 
+Following this, for both the supercells and CITEseq data, we retain
+only the common proteins/markers.
+Lastly, we utilised either the Seurat rPCA [@seuratv4] or Harmony [@korsunsky2019fast] and k-Nearest Neighbor (kNN) methods
+to perform the label tranfer. 
+For the latter, Harmony was employed for integration the supercell with the CITEseq data, 
+while kNN was employed assigning supercell with the cell type annotation in the
+CITEseq data.
+
+The scripts necessary to replicate the workflow are available in `code/label_transfer`
+directory.
+
+The ensuing results are derived from the aforementioned workflow application.
+
+# Load libraries
+
+```{r warning=FALSE, message=FALSE}
+library(pheatmap)
+library(data.table)
+library(viridis)
+library(scales)
+library(ggplot2)
+library(RColorBrewer)
+library(here)
+```
+
+# Load data
+```{r}
+harmony_res <- fread(here("output", "label_transfer", "harmony_knn.csv"))
+rpca_res <- fread(here("output", "label_transfer", "seurat_rPCA.csv"))
+```
+
+We shall remove the unassigned cells as we don't know their identity.
+```{r}
+harmony_res <- harmony_res[Gated_Population != "unassigned"]
+rpca_res <- rpca_res[Gated_Population != "unassigned"]
+```
+
+# Harmony with kNN
+
+Here, we first employ Harmony do align supercells with the CITEseq data,
+and thereafter use kNN classifier to transfer the label of the aligned
+CITEseq data to supercell.
+
+```{r}
+conf_mat <- with(harmony_res, table(predicted_population, Gated_Population))
+conf_mat_proportion <- sweep(conf_mat, 2, colSums(conf_mat), "/")
+conf_mat_dt <- data.table(conf_mat_proportion)
+conf_mat_dt <- conf_mat_dt[order(Gated_Population, predicted_population)]
+conf_mat_dt <- conf_mat_dt[N > 0]
+```
+
+```{r fig.width=11, fig.height=11}
+ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
+  geom_point(aes(size = N, fill = N), pch=21, color="grey") +
+  scale_fill_distiller(palette = "RdBu", direction = -1) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    panel.grid.major = element_blank()
+  ) +
+  labs(x = "Actual Label", y = "Predicted Label", size = "Proportion", fill = "Proportion",
+       title = "Harmony Combined with kNN")
+
+```
+
+# rPCA
+
+```{r}
+conf_mat <- with(rpca_res, table(predicted_population, Gated_Population))
+conf_mat_proportion <- sweep(conf_mat, 2, colSums(conf_mat), "/")
+conf_mat_dt <- data.table(conf_mat_proportion)
+conf_mat_dt <- conf_mat_dt[order(Gated_Population, predicted_population)]
+conf_mat_dt <- conf_mat_dt[N > 0]
+```
+
+```{r fig.width=11, fig.height=11}
+ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
+  geom_point(aes(size = N, fill = N), pch=21, color="grey") +
+  scale_fill_distiller(palette = "RdBu", direction = -1) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    panel.grid.major = element_blank()
+  ) +
+  labs(x = "Actual Label", y = "Predicted Label", size = "Proportion", fill = "Proportion",
+       title = "Seurat rPCA")
+
+```
+
+# References

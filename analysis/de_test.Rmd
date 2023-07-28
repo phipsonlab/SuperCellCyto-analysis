@@ -1,0 +1,246 @@
+---
+title: "Recovery of Differentially Expressed Cell State Markers Across Stimulated and Unstimulated Human Peripheral Blood Cells"
+author: "Givanna Putri"
+date: "2023-05-24"
+bibliography: ref.bib
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+In this analysis, we assess whether a differential expression analysis performed at 
+the supercell level can recapitulate previously published findings obtained by performing 
+differential expression analysis using the Diffcyt algorithm [@weber2019diffcyt] at the single cell level.
+
+Specifically, we analysed a publicly available mass cytometry dataset quantifying 
+the immune cells in stimulated and unstimulated human peripheral blood cells 
+(BCR_XL dataset [@bodenmiller2012multiplexed]). 
+This is a paired experimental design, with each of the 8 independent samples, 
+obtained from 8 different individuals, contributing to both stimulated and 
+unstimulated samples (16 samples in total). 
+
+This dataset was previously analysed using Diffcyt to identify the cell state 
+markers that were differentially expressed between the stimulated samples 
+(BCR-XL group) and the unstimulated samples (Reference group). 
+
+Our aim was to replicate these findings using a combination of SuperCellCyto and 
+the Limma R package [@ritchie2015limma]. 
+The analysis protocol is as the following.
+First the data was downloaded using the HDCytoData package and an arcsinh transformation
+with cofactor 5 was applied. 
+Subsequently, SuperCellCyto was applied on the data. 
+The relevant scripts can be found in `code/bodenmiller_data/download_bodenmiller_data.R`
+and `code/bodenmiller_data/run_supercell_bodenmiller_data.R`.
+
+The findings reported here represent the results following the application of SuperCellCyto.
+
+# Load libraries and data
+```{r message=FALSE}
+library(data.table)
+library(ggplot2)
+library(limma)
+library(pheatmap)
+library(gridExtra)
+library(here)
+library(SuperCell)
+
+supercell_cell_map <- fread(here("output", "bodenmiller_cytof", "20230522", "supercell_gamma20_cell_map.csv"))
+cell_info <- fread(here("output", "bodenmiller_cytof", "20230522", "cell_info_with_cell_id.csv"))
+supercell_mat <- fread(here("output", "bodenmiller_cytof", "20230522", "supercell_gamma20_exp_mat.csv"))
+markers <- fread(here("data", "bodenmiller_cytof", "markers_info.csv"))
+
+supercell_cell_map <- merge.data.table(
+  x = supercell_cell_map,
+  y = cell_info[, c("cell_id", "population_id"), with = FALSE],
+  by.x = "CellId",
+  by.y = "cell_id"
+)
+```
+
+
+# Examine purity of supercells
+
+Purity was calculated using the implementation provided by the SuperCell package.
+
+```{r}
+supercell_purity <- as.data.table(
+  supercell_purity(clusters = supercell_cell_map$population_id,
+  supercell_membership = supercell_cell_map$SuperCellID),
+  keep.rownames = TRUE
+)
+setnames(supercell_purity, c("V1", "V2"), c("supercell_id", "purity_score"))
+
+ggplot(supercell_purity, aes(x = purity_score)) +
+  geom_histogram(binwidth = .05) +
+  labs(
+    x = "Purity score",
+    y = "Number of supercells",
+    title = "Supercell purity for gamma = 20",
+    subtitle = paste("Mean purity =", round(mean(supercell_purity$purity_score), 2))
+  ) +
+  theme_bw() +
+  scale_y_continuous(breaks = scales::pretty_breaks(n=10)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n=10))
+```
+
+# Differential Expression Analysis
+
+We first annotate the supercells based on the most abundant cell type they contain.
+In situations where the most abundant cell type is a tie between several different
+cell types, the one that appears first in the sequence is used as the supercell's annotation.
+
+```{r}
+supercell_annotation <- supercell_cell_map[, .N, by = .(SuperCellID, population_id)][
+  order(-N), .SD[1], by = SuperCellID
+]
+
+supercell_mat <- merge.data.table(
+  x = supercell_mat,
+  y = supercell_annotation[, c("SuperCellID", "population_id")],
+  by.x = "SuperCellId",
+  by.y = "SuperCellID"
+)
+```
+
+Subsequently, we compute the mean expression of each state marker across different
+sample and cell type.
+
+```{r}
+# Do DE test on just the cell state markers
+markers_state <- paste0(markers[markers$marker_class == 'state']$marker_name, "_asinh_cf5")
+
+supercell_mean_perSampPop <- supercell_mat[, lapply(.SD, mean), by = c("sample_id", "population_id"), .SDcols = markers_state]
+
+# Add in the group details and the patient id
+sample_info <- unique(cell_info, by = c("group_id", "patient_id", "sample_id"))
+sample_info[, c("cell_id", "population_id") := list(NULL, NULL)]
+
+supercell_mean_perSampPop <- merge.data.table(supercell_mean_perSampPop, sample_info, by = "sample_id")
+supercell_mean_perSampPop[, `:=`(
+  group_id = factor(group_id, levels=c("Reference", "BCR-XL")),
+  patient_id = factor(patient_id, levels=paste0("patient", seq(8))),
+  sample_id = factor(sample_id)
+)]
+supercell_mean_perSampPop <- supercell_mean_perSampPop[order(group_id)]
+```
+
+For each cell type, we then used the limma package to identify state markers that are differentially
+expressed across the 2 conditions.
+Specifically, we take into account the paired experimental design and use the `treat` 
+function with `fc=1.1` to compute empirical Bayes moderated-t p-values
+relative to the minimum fold-change threshold set using the `fc` parameter.
+
+```{r}
+
+cell_types <- c("B-cells IgM+", "CD4 T-cells", "NK cells")
+
+limma_res_supercell <- lapply(cell_types, function(ct) {
+
+  pseudobulk_sub <- supercell_mean_perSampPop[population_id == ct]
+
+  groups <- pseudobulk_sub$group_id
+  
+  # Taking into account the paired measurement
+  patients <- pseudobulk_sub$patient_id
+  design <- model.matrix(~0 + groups + patients)
+  colnames(design) <- gsub("groups", "", colnames(design))
+  colnames(design) <- gsub("-", "_", colnames(design))
+  cont <- makeContrasts(
+    RefvsBCRXL = Reference - BCR_XL,
+    levels = colnames(design)
+  )
+  fit <- lmFit(t(pseudobulk_sub[, markers_state, with = FALSE]), design)
+  fit_cont <- contrasts.fit(fit, cont)
+  fit_cont <- eBayes(fit_cont, trend=TRUE, robust=TRUE)
+  treat_all <- treat(fit_cont, fc=1.1)
+  
+  res <- as.data.table(
+    topTreat(treat_all, number = length(markers_state)),
+    keep.rownames = TRUE
+  )
+  # rename the rowname column as marker rather than "rn"
+  setnames(res, "rn", "marker")
+  res[, cell_type := ct]
+  
+  return(res)
+})
+limma_res_supercell <- rbindlist(limma_res_supercell)
+```
+
+Finally we use heatmap to assess the results returned by limma.
+
+```{r}
+# 1 panel per population
+pheatmap_sample_info <- copy(sample_info)
+pheatmap_sample_info[, `:=`(
+  group_id = factor(group_id, levels = c("Reference", "BCR-XL")),
+  patient_id = factor(patient_id, levels = paste0("patient", seq_len(8)))
+)]
+setnames(pheatmap_sample_info, "group_id", "Group")
+pheatmap_sample_info <- pheatmap_sample_info[order(Group, patient_id)]
+pheatmap_sample_info[, patient_id := NULL]
+
+pheatmap_sample_info <- data.frame(pheatmap_sample_info)
+rownames(pheatmap_sample_info) <- pheatmap_sample_info$sample_id
+pheatmap_sample_info$sample_id <- NULL
+
+cell_types_to_plot <- c("B-cells IgM+", "CD4 T-cells", "NK cells")
+
+heatmaps <- lapply(cell_types_to_plot, function(ct) {
+  # state markers status based on limma result
+  markers_states_info <- limma_res_supercell[cell_type == ct,]
+  markers_states_info[, FDR_sig := factor(ifelse(adj.P.Val <= 0.05, "Yes", "No"), levels = c("Yes", "No")) ]
+  markers_states_info[, marker := gsub("_asinh_cf5", "", marker)]
+  markers_states_info <- markers_states_info[order(FDR_sig)]
+
+  markers_states_info <- data.frame(markers_states_info[, c("marker", "FDR_sig")])
+  rownames(markers_states_info) <- markers_states_info$marker
+  markers_states_info$marker <- NULL
+
+  # filter to keep only a population,
+  # change the ordering of rows (samples) to suit sample_info so "reference"
+  # group comes first,
+  # set sample_id as row names
+  # rename the columns to remove _asinh
+  # reorganise the columns so the significant ones come first
+  pheatmap_data <- supercell_mean_perSampPop[population_id == ct,]
+  pheatmap_data[, sample_id := factor(sample_id, levels = rownames(pheatmap_sample_info))]
+  rownames(pheatmap_data) <- pheatmap_data$sample_id
+  pheatmap_data[, population_id := NULL]
+  setnames(pheatmap_data, markers_state, gsub("_asinh_cf5", "", markers_state))
+
+  pheatmap_data[, c("patient_id", "group_id") := list(NULL, NULL)]
+  setcolorder(pheatmap_data, c("sample_id", rownames(markers_states_info)))
+  
+  pheatmap_mat <- as.matrix(pheatmap_data, rownames = "sample_id")
+
+  pheatmap(
+    mat = pheatmap_mat,
+    cluster_cols = FALSE,
+    annotation_row = pheatmap_sample_info,
+    annotation_col = markers_states_info,
+    main = ct,
+    cluster_rows = FALSE,
+    annotation_colors = list(
+      Group = c("Reference" = "#E6E6FA", "BCR-XL" = "#5D3FD3"),
+      FDR_sig = c("Yes" = "darkgreen", "No" = "grey")
+    ),
+    scale = "column"
+  )
+})
+```
+
+Our findings were consistent with those identified by Diffcyt, 
+including elevated expression of pS6, pPlcg2, pErk, and pAkt in B cells in 
+the stimulated group, along with reduced expression of pNFkB in the stimulated group. 
+
+We also recapitulated the Diffcyt results in CD4 T cells and Natural Killer (NK) cells, 
+with significant differences in the expression of pBtk and pNFkB in CD4 T cells 
+between the stimulated and unstimulated groups, and distinct differences in the 
+expression of pBtk, pSlp76, and pNFkB in NK cells between the stimulated and unstimulated groups.
+
+# References
+
+

@@ -1,0 +1,342 @@
+---
+title: "Supercells Preserve Biological Heterogeneity and Facilitate Efficient Cell Type Identification"
+author: "Givanna Putri"
+date: "2023-05-23"
+bibliography: ref.bib
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+We assessed whether supercells could preserve the biological diversity inherent in a dataset, and whether the clustering of supercells could expedite the process of cell type identification without compromising accuracy.
+
+# Datasets
+
+We ran SuperCellCyto on two publicly accessible cytometry datasets from 
+Weber and Robinson's clustering benchmarking study [@weber2016comparison].
+
+The cell type annotation were done using manual gating by an immunologist. 
+
+* Levine\_32dim dataset [@levine2015data] measures the expression of 32 markers in bone marrow cells 
+from healthy human donors, comprised of 2 samples, 265,627 cells, and 14 cell types,
+with cell type labels assigned to 39% (104,184) of cells.
+
+* Samusik\_all dataset [@samusik2016automated] quantifies the expression of 39 markers in bone marrow cells from healthy mice. 
+There are 10 samples, 841,644 cells, and 24 cell types, with cell type labels 
+assigned to 61% (514,386) of cells.
+
+The R scripts required to run SuperCellCyto and perform clustering 
+can be found in the `code/explore_supercell_purity_clustering` directory.
+
+## Load libraries and data
+
+```{r message=FALSE, warning=FALSE}
+library(data.table)
+library(ggplot2)
+library(scales)
+library(here)
+library(stringr)
+library(ggridges)
+library(viridis)
+```
+
+```{r}
+levine_res_dir <- here("output", "explore_supercell_purity_clustering",
+                       "20230511", "levine_32dim")
+samusik_res_dir <- here("output", "explore_supercell_purity_clustering",
+                        "20230511", "samusik_all")
+```
+
+# Data Reduction Amount
+
+How many supercells were generated per gamma value?
+
+```{r}
+gamma <- seq(5, 50, 5)
+n_supercells_levine <- sapply(gamma, function(gam) {
+  nrow(fread(here(levine_res_dir, "supercell_runs",
+                  paste0("supercellExpMat_gamma", gam, ".csv"))))
+})
+n_supercells_samusik <- sapply(gamma, function(gam) {
+  nrow(fread(here(samusik_res_dir, "supercell_runs",
+                  paste0("supercellExpMat_gamma", gam, ".csv"))))
+})
+
+n_cells_levine <- nrow(fread(here(levine_res_dir, "supercell_runs",
+                                  "supercellCellMap_gamma5.csv")))
+n_cells_samusik <- nrow(fread(here(samusik_res_dir, "supercell_runs",
+                                   "supercellCellMap_gamma5.csv")))
+
+n_supercells <- data.table(gamma, n_supercells_levine, n_supercells_samusik)
+n_supercells
+```
+
+```{r}
+n_supercells_plot <- data.table(
+  gamma = rep(gamma, 2),
+  n_cells = c(n_supercells_levine, n_supercells_samusik),
+  dataset = c(rep("Levine_32dim", length(gamma)),
+              rep("Samusik_all", length(gamma)))
+)
+n_supercells_plot$gamma <- factor(n_supercells_plot$gamma, levels = c(gamma))
+n_supercells_plot <- n_supercells_plot[order(gamma)]
+```
+
+```{r}
+facet_labels <- c(
+  "Levine_32dim" = paste0("Levine_32dim\n",
+                          format(n_cells_levine, big.mark = ","),
+                          " cells"),
+  "Samusik_all" = paste0("Samusik_all\n",
+                         format(n_cells_samusik, big.mark = ","),
+                         " cells")
+)
+ggplot(n_supercells_plot, aes(x = gamma, y = n_cells)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  facet_wrap(~dataset, labeller = labeller(dataset = facet_labels)) +
+  scale_y_continuous(labels = label_comma(), breaks = pretty_breaks(n = 10)) +
+  labs(
+    y = "Number of supercells", x = "Gamma",
+    title = "Number of supercells generated per gamma value"
+  ) +
+  theme_bw()
+```
+
+# Impact of gamma parameters on Supercell Purity
+
+We investigate how gamma parameters influence Supercell Purity.
+Gamma values determine the granularity of the Supercell with a direct relationship:
+`gamma = number of cells / number of supercells`.
+A larger gamma implies fewer, larger supercells (each supercell capturing
+more cells), while a smaller gamma leads to more, smaller supercells.
+
+```{r message=FALSE}
+levine_purity <- fread(here(levine_res_dir, "evaluation",
+                            "supercell_purities.csv"))
+levine_purity[, data_source := "Levine_32dim"]
+samusik_purity <- fread(here(samusik_res_dir, "evaluation",
+                             "supercell_purities.csv"))
+samusik_purity[, data_source := "Samusik_all"]
+purity_scores <- rbind(levine_purity, samusik_purity)
+purity_scores[, gamma := factor(gamma)]
+```
+
+```{r}
+ggplot(purity_scores, aes(y = purity, x = gamma)) +
+  geom_violin() +
+  facet_wrap(~data_source) +
+  theme_bw() +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  labs(
+    y = "Purity", x = "Gamma value",
+    title = "Distribution of Supercell Purity Across Gamma Values"
+  )
+```
+
+What are the mean purity scores?
+
+```{r}
+mean_purity <- purity_scores[, .(mean_purity = mean(purity)), by = c("gamma", "data_source")]
+
+ggplot(mean_purity, aes(x = gamma, y = mean_purity, fill = data_source)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  scale_fill_manual(values = c("Levine_32dim" = "#D22B2B", "Samusik_all" = "#6495ED")) +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  theme_classic() +
+  labs(
+    x = "Gamma value", y = "Mean Purity", fill = "Dataset",
+    title = "Supercell Mean Purity Across Gamma Values"
+  )
+```
+
+Proportion of purity scores < 0.5 across all gamma values?
+
+```{r}
+poor_purity <- purity_scores[purity < 0.5, ]
+poor_purity_cnt <- merge.data.table(
+  poor_purity[, .N, by = "data_source"],
+  purity_scores[, .N, by = "data_source"],
+  by = "data_source",
+  suffixes = c("_poor", "_all")
+)
+poor_purity_cnt[, percent := N_poor * 100 / N_all]
+
+poor_purity_cnt
+```
+
+For both datasets, we observed very high mean purity scores across all gamma values (purity > 0.9), with the vast proportion of supercells attaining a purity score of 1. 
+A small percentage of supercells (0.04% for Levine_32dim and 0.59% for Samusik_all) obtained purity < 0.5.
+
+# Comparing Marker Expression Distribution
+
+## Samusik data
+
+```{r}
+markers <- fread(here(
+  "data", "explore_supercell_purity_clustering",
+  "samusik_all", "samusik_all_asinh_markers_info.csv"
+))
+markers <- markers[marker_class != "none"]
+
+raw_dat <- fread(here(
+  "data", "explore_supercell_purity_clustering",
+  "samusik_all", "samusik_all_asinh.csv"
+))
+raw_dat$from <- "all_cells"
+
+
+supercell_dat <- rbindlist(lapply(seq(5, 50, by = 5), function(gamma_val) {
+  dt <- fread(here(
+    samusik_res_dir, "supercell_runs",
+    paste0("supercellExpMat_gamma", gamma_val, ".csv")
+  ))
+  dt$from <- gamma_val
+  return(dt[, c("from", paste0(markers$marker_name, "_asinh_cf5")), with = FALSE])
+}))
+
+all_dat <- rbind(supercell_dat,
+                 raw_dat[, c("from", paste0(markers$marker_name, "_asinh_cf5")), with = FALSE])
+all_dat$from <- factor(all_dat$from, levels = c(seq(5, 50, 5), "all_cells"))
+```
+
+```{r message = FALSE, fig.width = 18, fig.height = 20}
+all_dat_molten <- melt(all_dat, id.vars = "from")
+all_dat_molten[, variable := gsub("_asinh_cf5", "", variable)]
+
+ggplot(all_dat_molten, aes(x = value, y = from, colour = from, fill = from)) +
+  geom_density_ridges(alpha = 0.3) +
+  scale_colour_viridis(option = "turbo", discrete = TRUE, guide = "none") +
+  scale_fill_viridis(option = "turbo", discrete = TRUE, guide = "none") +
+  theme_ridges() +
+  facet_wrap(~variable) +
+  scale_x_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(
+    y = "Gamma value", x = "Marker Expression",
+    title = "Distribution of Marker Expression of Supercells or Single Cells for Samusik_all"
+  )
+```
+
+## Levine data
+
+```{r}
+markers <- fread(here(
+  "data", "explore_supercell_purity_clustering",
+  "levine_32dim", "levine_32_asinh_markers_info.csv"
+))
+markers <- markers[marker_class != "none"]
+
+raw_dat <- fread(here(
+  "data", "explore_supercell_purity_clustering",
+  "levine_32dim", "levine_32_asinh.csv"
+))
+raw_dat$from <- "all_cells"
+
+
+supercell_dat <- rbindlist(lapply(seq(5, 50, by = 5), function(gamma_val) {
+  dt <- fread(here(
+    levine_res_dir, "supercell_runs",
+    paste0("supercellExpMat_gamma", gamma_val, ".csv")
+  ))
+  dt$from <- gamma_val
+  return(dt[, c("from", paste0(markers$marker_name, "_asinh_cf5")), with = FALSE])
+}))
+
+all_dat <- rbind(supercell_dat, 
+                 raw_dat[, c("from", paste0(markers$marker_name, "_asinh_cf5")), with = FALSE])
+all_dat$from <- factor(all_dat$from, levels = c(seq(5, 50, 5), "all_cells"))
+```
+
+```{r message = FALSE, fig.width = 18, fig.height = 20}
+all_dat_molten <- melt(all_dat, id.vars = "from")
+all_dat_molten[, variable := gsub("_asinh_cf5", "", variable)]
+
+ggplot(all_dat_molten, aes(x = value, y = from, colour = from, fill = from)) +
+  geom_density_ridges(alpha = 0.3) +
+  scale_colour_viridis(option = "turbo", discrete = TRUE, guide = "none") +
+  scale_fill_viridis(option = "turbo", discrete = TRUE, guide = "none") +
+  theme_ridges() +
+  facet_wrap(~variable) +
+  scale_x_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(
+    y = "Gamma value", x = "Marker Expression",
+    title = "Distribution of Marker Expression of Supercells or Single Cells for Levine_32dim"
+  )
+```
+
+The distribution of marker expression between the supercells and single cells are almost identical.
+
+# ARI between Supercell Clustering and Ground Truth Annotation
+
+```{r, message=FALSE}
+algo <- c("flowsom", "louvain")
+levine_ari <- rbindlist(lapply(algo, function(alg) {
+  res <- fread(here(levine_res_dir, "evaluation", paste0(alg, "_ari_vs_truth.csv")))
+  res <- res[, c("gamma", "ari"), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := "Levine_32dim"]
+  return(res)
+}))
+samusik_ari <- rbindlist(lapply(algo, function(alg) {
+  res <- fread(here(samusik_res_dir, "evaluation", paste0(alg, "_ari_vs_truth.csv")))
+  res <- res[, c("gamma", "ari"), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := "Samusik_all"]
+}))
+ari_truth <- rbind(levine_ari, samusik_ari)
+ari_truth[, algorithm := ifelse(algorithm == "Flowsom", "FlowSOM", algorithm)]
+```
+
+```{r}
+ggplot(ari_truth, aes(x = factor(gamma), y = ari, fill = algorithm)) +
+  geom_boxplot(outlier.size = 0.5, lwd = 0.3) +
+  facet_wrap(~dataset) +
+  theme_bw() +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  scale_fill_manual(values = c("FlowSOM" = "orange", "Louvain" = "#0096FF")) +
+  labs(
+    y = "Adjusted Rand Index (ARI)", x = "Gamma value", fill = "Algorithm",
+    title = "Concordance Between Supercell Clustering and Cell Type Annotation"
+  )
+```
+
+High scores across all datasets, clustering algorithms, and gamma values
+
+# ARI between Supercell and Single Cell Clustering
+
+```{r, message=FALSE}
+algo <- c("flowsom", "louvain")
+levine_ari <- rbindlist(lapply(algo, function(alg) {
+  res <- fread(here(levine_res_dir, "evaluation", paste0(alg, "_ari_vs_all.csv")))
+  res <- res[, c("gamma", "ari"), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := "Levine_32dim"]
+  return(res)
+}))
+samusik_ari <- rbindlist(lapply(algo, function(alg) {
+  res <- fread(here(samusik_res_dir, "evaluation", paste0(alg, "_ari_vs_all.csv")))
+  res <- res[, c("gamma", "ari"), with = FALSE]
+  res[, algorithm := str_to_title(alg)]
+  res[, dataset := "Samusik_all"]
+}))
+ari_all <- rbind(levine_ari, samusik_ari)
+ari_all[, algorithm := ifelse(algorithm == "Flowsom", "FlowSOM", algorithm)]
+```
+
+```{r}
+ggplot(ari_all, aes(x = factor(gamma), y = ari, fill = algorithm)) +
+  geom_boxplot(outlier.size = 0.5, lwd = 0.3) +
+  facet_wrap(~dataset) +
+  theme_bw() +
+  scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
+  scale_fill_manual(values = c("FlowSOM" = "orange", "Louvain" = "#0096FF")) +
+  labs(
+    y = "Adjusted Rand Index (ARI)", x = "Gamma value", fill = "Algorithm",
+    title = "Concordance Between Supercell and Single Cell Clustering"
+  )
+```
+
+High scores across all datasets, clustering algorithms, and gamma values.
+
+# References

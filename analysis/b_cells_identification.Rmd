@@ -1,0 +1,333 @@
+---
+title: "Supercells Combined with Clustering Can Identify Rare B Cell Subsets"
+author: "Givanna Putri"
+date: "2023-05-24"
+bibliography: ref.bib
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+In this analysis, we seek to verify whether we can faithfully replicate the traditional clustering and annotation process, and identify rare cell populations at the supercell level
+
+The flow cytometry data set we employed were the large flow cytometry dataset profiling more than 8 million B cells in healthy human bone marrow samples [@oetjen2018human].
+
+The annotation for the dataset were not publicly available.
+However, the authors have provided the following gating strategy within the manuscript's 
+supplementary material [@oetjen2018human], which can be employed to discern B cells within the data:
+
+* Pre-B cell (CD20-): CD45+ CD19+ CD20- CD10+
+* Immature B cells (CD20+): CD45+ CD19+ CD20+ CD10+
+  * Transitional B cells: CD45+ CD19+ CD20+ CD10+ CD27-
+* Mature B cells: CD45+ CD19+ CD20+ CD10-
+  * Naïve Mature B cells: CD45+ CD19+ CD20+ CD10- CD27- CD21hi
+  * Exhausted/Tissue-like Memory: CD45+ CD19+ CD20+ CD10- CD27- CD21lo
+  * Memory B cells: CD45+ CD19+ CD20+ CD10- CD27+
+    * Activated Mature: CD45+ CD19+ CD20+ CD10- CD27+ CD21lo
+    * Resting Memory: CD45+ CD19+ CD20+ CD10- CD27+ CD21hi
+* CD20- CD10-: CD45+ CD19+ CD20- CD10-
+  * Plasmablast: CD45+ CD19+ CD20- CD10- CD27+ CD38+
+    * Plasma Cell: CD45+ CD19+ CD20- CD10- CD27+ CD38+ CD138+
+
+The B cell panel consists of 13 markers, namely:
+
+1. CD80
+2. Live/Dead
+3. CD27
+4. CD19
+5. CD45
+6. CD10
+7. CD138
+8. PD-1
+9. CD20
+10. CD38
+11. CD86
+12. CD21
+13. CD40
+
+The process employed in this study comprises the following steps: 
+FCS files were initially downloaded from the FlowRepository website
+[FR-FCM-ZYQ9](https://flowrepository.org/id/FR-FCM-ZYQ9).
+
+Single live cells were isolated through manual gating using CytoExplorer [@cytoexplorer]
+(the relevant code can be found in `code/b_cell_identification/gate_flow_data.R`).
+The following single live cells were retained.
+```{r}
+knitr::include_graphics("assets/oetjen_bcell_single_live_cells.png", error = FALSE)
+```
+
+Subsequently, the markers were transformed using the arcsinh transformation with a co-factor of 150. 
+This was followed by the application of SuperCellCyto, which produced a set of supercells. 
+These supercells were clustered using Louvain clustering with k parameter set to 3.
+
+All code used to execute these procedures can be found in `code/oetjen_bm_data/cluster_run_supercell.R`.
+
+# Load libraries
+
+```{r message=FALSE, warning=FALSE}
+library(scales)
+library(SingleCellExperiment)
+library(ggforce)
+library(here)
+library(data.table)
+library(cowplot)
+library(Spectre)
+library(ggplot2)
+library(viridis)
+library(bluster)
+library(pheatmap)
+library(ggridges)
+```
+
+## Load data
+```{r message=FALSE}
+root_dir <- here("output", "oetjen_b_cell_panel", "20230511")
+supercell_mat <- fread(here(root_dir, "supercellExpMat_clust_umap.csv"))
+
+markers <- names(supercell_mat)[1:12]
+
+cell_type_markers <- paste0(
+  c("CD19", "CD45", "CD10", "CD20", "CD27", "CD21", "CD38", "CD138"),
+  "_asinh_cf150"
+)
+```
+
+## Identify B cells
+
+Use pheatmap annotate the clusters.
+
+```{r fig.width=7, fig.height=7}
+supercell_mat_forHeatmap <- supercell_mat[, c("louvain_k3", cell_type_markers), with = FALSE]
+supercell_mat_forHeatmap <- supercell_mat_forHeatmap[order(louvain_k3)]
+supercell_mat_forHeatmap[, cluster := paste0("cluster_", louvain_k3)]
+supercell_mat_forHeatmap[, louvain_k3 := NULL]
+
+median_exp <- supercell_mat_forHeatmap[, lapply(.SD, median), by = cluster, .SDcols = cell_type_markers]
+median_exp_mat <- as.matrix(median_exp[, cell_type_markers, with = FALSE])
+row.names(median_exp_mat) <- median_exp$cluster
+colnames(median_exp_mat) <- gsub("_asinh_cf150", "", colnames(median_exp_mat))
+
+pheatmap(
+  median_exp_mat,
+  cluster_cols = FALSE,
+  cluster_rows = FALSE,
+  display_numbers = TRUE,
+  number_format = "%.2f",
+  scale = "column",
+  main = "Median Expression of Cell Type Markers Across Clusters"
+)
+```
+
+Using the heatmap, we derive the following cell type annotations.
+
+```{r}
+annotation <- rep("Unknown", 46)
+annotation[41] <- "Pre B cells"
+annotation[18] <- "Immature B cells"
+annotation[26] <- "Transitional B cells"
+annotation[c(27, 29, 32, 38, 39, 40)] <- "CD20- CD10-"
+annotation[37] <- "Plasmablast"
+annotation[46] <- "Plasma cells"
+annotation[22] <- "Naive Mature B cells"
+annotation[15] <- "Exhausted Tissue like Memory"
+annotation[30] <- "Resting Memory"
+annotation[c(28, 43)] <- "Activated Mature"
+
+annotation_df <- data.table(cluster = paste0("cluster_", seq(1, 46)), cell_type = annotation)
+```
+
+Create the heatmap which show median expression and also the annotation for each cluster.
+
+```{r fig.width=10, fig.height=3}
+# The order is for ordering the heatmap so the same cell types are together
+heatmap_annot_col <- annotation_df[order(cell_type)]
+heatmap_annot_col <- heatmap_annot_col[cell_type != "Unknown"]
+heatmap_annot_col <- data.frame(heatmap_annot_col, row.names = "cluster")
+annot_cell_types <- unique(heatmap_annot_col$cell_type)
+
+annot_colours <- viridis(n = length(annot_cell_types), option = "turbo")
+names(annot_colours) <- annot_cell_types
+
+# Re-order heatmap to match annotation so the same cell types are together
+median_exp_mat_noUnassigned <- median_exp_mat[rownames(heatmap_annot_col), ]
+
+pheatmap(
+  t(median_exp_mat_noUnassigned),
+  cluster_cols = FALSE,
+  cluster_rows = FALSE,
+  annotation_col = heatmap_annot_col,
+  scale = "column",
+  main = "Median Expression of Cell Type Markers Across Clusters",
+  annotation_colors = list(cell_type = annot_colours),
+  angle_col = 90
+)
+```
+
+We then embed them to the supercell matrix.
+
+```{r}
+supercell_mat_annot <- supercell_mat
+supercell_mat_annot[, cluster := paste0("cluster_", louvain_k3)]
+supercell_mat_annot <- merge.data.table(
+  x = supercell_mat,
+  y = annotation_df,
+  by = "cluster"
+)
+```
+
+Following this, we generate the UMAP plot reflecting these annotations.
+The UMAP coordinates were generated using the Spectre package.
+The code to generate the UMAP coordinates is available on `code/oetjen_bm_data/cluster_run_supercell.R`.
+
+```{r}
+cell_types <- sort(unique(supercell_mat_annot$cell_type))
+colour_scheme <- viridis(n = length(cell_types) - 1, option = "turbo")
+names(colour_scheme) <- cell_types[c(1:length(cell_types) - 1)]
+colour_scheme["Unknown"] <- "#D3D3D3"
+
+# So unknown is at the bottom.
+supercell_mat_annot[, cell_type := factor(cell_type, levels = cell_types)]
+
+ggplot(supercell_mat_annot, aes(x = UMAP_X, y = UMAP_Y, colour = cell_type)) +
+  geom_point(size = 0.2) +
+  theme_classic() +
+  guides(colour = guide_legend(override.aes = list(size = 5))) +
+  scale_colour_manual(values = colour_scheme) +
+  labs(colour = "Cell type")
+```
+
+To be more sure that our cell type annotation is reasonable, we shall
+expand our annotated supercells to the single cell level and visualise
+the distribution of their marker expression.
+We will exclude those we assigned "unknown" label.
+
+Remove unassigned for heatmap.
+```{r}
+supercell_mat_annot_noUnassigned <- supercell_mat_annot[cell_type != "Unknown"]
+```
+
+Check the distribution of the marker expression of the single cells expanded
+from the annotated supercells.
+
+```{r}
+cell_mat <- fread(here(
+  "output", "oetjen_b_cell_panel", "20230404_cytoexplorer_gating",
+  "cell_dat_asinh.csv"
+))
+
+cell_map_full <- fread(here(
+  "output", "oetjen_b_cell_panel", "20230511",
+  "supercellCellMap.csv"
+))
+
+cell_map <- merge.data.table(
+  x = cell_map_full,
+  y = supercell_mat_annot_noUnassigned[, c("SuperCellId", "cell_type")],
+  by.x = "SuperCellID",
+  by.y = "SuperCellId"
+)
+cell_map <- cell_map[cell_type != "Unknown", ]
+
+cell_mat <- merge.data.table(
+  x = cell_mat,
+  y = cell_map,
+  by = "CellId"
+)
+
+cell_mat_long <- melt(
+  data = cell_mat,
+  id.vars = "cell_type",
+  measure.vars = cell_type_markers,
+  variable.name = "marker"
+)
+
+cell_mat_long$marker <- gsub("_asinh_cf150", "", cell_mat_long$marker)
+
+# So we can order the y-axis of the plot so the order somewhat resembles the
+# hierarchical structure of the gating strategy.
+cell_mat_long$marker <- factor(cell_mat_long$marker,
+  levels = c("CD45", "CD19", "CD20", "CD10", "CD27", "CD21", "CD38", "CD138")
+)
+cell_mat_long <- cell_mat_long[order(marker)]
+```
+
+```{r message=FALSE, fig.width=12, fig.height=8}
+ggplot(cell_mat_long, aes(x = value, y = marker, colour = marker, fill = marker)) +
+  geom_density_ridges(alpha = 0.3) +
+  scale_colour_viridis(option = "turbo", discrete = TRUE, guide = "none") +
+  scale_fill_viridis(option = "turbo", discrete = TRUE, guide = "none") +
+  theme_ridges() +
+  facet_wrap(~cell_type) +
+  scale_x_continuous(breaks = pretty_breaks(n = 10)) +
+  labs(
+    y = "Marker", x = "Marker Expression",
+    title = "Distribution of Marker Expression of Single Cells"
+  )
+```
+
+How many supercells unannotated.
+
+```{r}
+table(supercell_mat_annot$cell_type)["Unknown"] / nrow(supercell_mat_annot)
+```
+
+How many plasma cells we found?
+
+```{r}
+plasma_cell_supercells <- supercell_mat_annot[cell_type == "Plasma cells"]
+plasma_cells <- cell_map_full[SuperCellID %in% plasma_cell_supercells$SuperCellId]
+nrow(plasma_cells)
+100 * nrow(plasma_cells) / nrow(cell_map_full)
+```
+
+
+Plot the proportion of each cell type as boxplot.
+
+```{r}
+cell_map <- merge.data.table(
+  x = cell_map_full,
+  y = supercell_mat_annot[, c("SuperCellId", "cell_type", "louvain_k3")],
+  by.x = "SuperCellID",
+  by.y = "SuperCellId"
+)
+
+# Proportion for each cluster and cell type
+cell_type_proportion <- cell_map[, .(cnt_per_clust = .N), by = c("cell_type")]
+cell_type_proportion[, proportion := cnt_per_clust / nrow(cell_map)]
+cell_type_proportion_noUnassigned <- cell_type_proportion[cell_type != "Unknown", ]
+
+# Get the cell type name ordered alphabetically so we match the colour to the heatmap
+ordered_cell_name <- sort(cell_type_proportion_noUnassigned$cell_type)
+cell_name_color <- turbo(n = length(ordered_cell_name))
+names(cell_name_color) <- ordered_cell_name
+
+
+# Order from highest proportion to low
+cell_type_proportion_noUnassigned <- cell_type_proportion_noUnassigned[order(-proportion)]
+cell_type_proportion_noUnassigned[, cell_type := factor(cell_type, levels = cell_type_proportion_noUnassigned$cell_type)]
+```
+
+```{r}
+ggplot(
+  cell_type_proportion_noUnassigned,
+  aes(
+    x = cell_type, y = proportion,
+    color = cell_type
+  )
+) +
+  geom_point(size = 3) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(breaks = pretty_breaks(n = 10)) +
+  scale_color_manual(values = cell_name_color, breaks = names(cell_name_color)) +
+  labs(
+    y = "Proportion of single cells", x = "Cell type", color = "Cell type",
+    title = "Proportion of B cell subsets"
+  )
+```
+
+
+
+# References

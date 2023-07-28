@@ -1,11 +1,37 @@
 ---
-title: "Home"
+title: "SuperCellCyto analysis"
+author:
+  - name: Givanna Putri
+date: "`r Sys.Date()`"
 site: workflowr::wflow_site
 output:
   workflowr::wflow_html:
-    toc: false
+    toc: true
 editor_options:
   chunk_output_type: console
 ---
 
-Welcome to my research website.
+# Abstract {-}
+
+The rapid advancements in cytometry technologies have enabled the quantification of up to 50 proteins across millions of cells at a single-cell resolution. The analysis of cytometry data necessitates the use of computational tools for tasks such as data integration, clustering, and dimensionality reduction. While numerous computational methods exist in the cytometry and single-cell RNA sequencing (scRNAseq) fields, many are hindered by extensive run times when processing large cytometry data containing millions of cells. Existing solutions, such as random subsampling, often prove inadequate as they risk excluding small, rare cell subsets. To address this, we propose a practical strategy that builds on the SuperCell framework from the scRNAseq field. The supercell concept involves grouping single cells with highly similar transcriptomic profiles, and has been shown to be an effective unit of analysis for scRNAseq data. We show that for cytometry datasets, there is no loss of information by grouping cells into supercells. Further, we demonstrate the effectiveness of our approach by conducting a series of downstream analyses on six publicly available cytometry datasets at the supercell level, and successfully replicating previous findings performed at the single cell level. We present a computationally efficient solution for transferring cell type labels from single-cell multiomics data which combines RNA with protein measurements, to a cytometry dataset, allowing for more precise cell type annotations. Our SuperCellCyto R package and the associated analysis workflows are available on our GitHub repositories (https://github.com/phipsonlab/SuperCellCyto and https://github.com/phipsonlab/SuperCellCyto-analysis/).
+
+# Authors {-}
+
+Givanna H. Putri^1^, George Howitt^2^, Felix Marsh-Wakefield^3^, Thomas Ashhurst^4^, Belinda Phipson^1^
+
+^1^ The Walter and Eliza Hall Institute of Medical Research, Parkville, VIC, Australia
+
+^2^ Peter MacCallum Cancer Centre and The Sir Peter MacCallum Department of Oncology, The University of Melbourne, Parkville, VIC, Australia
+
+^3^ Centenary Institute of Cancer Medicine and Cell Biology, Sydney, NSW, Australia
+
+^4^ Sydney Cytometry Core Research Facility and School of Medical Sciences, The University of Sydney, Sydney, NSW, Australia 
+
+# Analysis Overview {-}
+1. [Supercells Preserve Biological Heterogeneity and Facilitate Efficient Cell Type Identification](explore_supercell_purity_clustering.html)
+2. [Supercells Combined with Clustering Can Identify Rare B Cell Subsets](b_cells_identification.html)
+3. [Mitigating Batch Effects in the Integration of Multi-Batch Cytometry Data at the Supercell Level](batch_correction.html)
+4. [Recovery of Differentially Expressed Cell State Markers Across Stimulated and Unstimulated Human Peripheral Blood Cells](de_test.html)
+5. [Identification of Differentially Abundant Rare Monocyte Subsets in Melanoma Patients](da_test.html)
+6. [Efficient Cell Type Label Transfer Between CITEseq and Cytometry Data](label_transfer.html)
+7. [Analysis of Run Times](run_time.html)

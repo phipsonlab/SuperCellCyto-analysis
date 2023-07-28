@@ -1,0 +1,380 @@
+---
+title: "Identification of Differentially Abundant Rare Monocyte Subsets in Melanoma Patients"
+author: "Givanna Putri"
+date: "2023-07-05"
+bibliography: ref.bib
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+In this analysis, we investigated the capacity to conduct differential abundance 
+analysis using supercells. 
+We applied SuperCellCyto and Propeller [@phipson2022propeller] to a mass cytometry dataset quantifying 
+the baseline samples (pre-treatment) of melanoma patients who subsequently either 
+responded (R) or did not respond (NR) to an anti-PD1 immunotherapy (Anti_PD1 dataset). 
+There are 20 samples in total (10 responders and 10 non-responders samples). 
+The objective of this analysis was to identify a rare subset of monocytes, 
+characterised as CD14+, CD33+, HLA-DRhi, ICAM-1+, CD64+, CD141+, CD86+, 
+CD11c+, CD38+, PD-L1+, CD11b+, whose abundance correlates strongly with the 
+patient's response status to anti-PD1 immunotherapy [@krieg2018high] [@weber2019diffcyt].
+
+The analysis protocol is as the following:
+
+1. The data was first downloaded using the HDCytoData package, after which an arcsinh 
+transformation with a cofactor of 5 was applied. 
+2. We then used SuperCellCyto (with gamma parameter set to 20) to generate 4,286 
+supercells from 85,715 cells. 
+3. We then ran cyCombine to integrate the two batches together, and clustered the 
+batch-corrected supercells using FlowSOM. 
+4. We then identified the clusters representing the rare monocyte subset based on 
+the median expression of the aforementioned rare monocyte subset’s signatory markers. 
+5. We then expanded the supercells back to single cells for more accurate cell type 
+proportion calculation as it is highly likely for each supercell to contain 
+different numbers of cells. 
+6. Once we expanded the supercells back to single cells, we retained only clusters 
+that contained a minimum of three cells from each sample, and performed a 
+differential abundance test using Propeller, accounting for batch. 
+7. For comparison, we also applied Propeller directly on the supercells without 
+expanding them back to single cells. 
+For consistency, we only compared clusters that were retained by the aforementioned filtering process.
+
+# Load libraries
+```{r message=FALSE, warning=FALSE}
+library(data.table)
+library(ggplot2)
+library(limma)
+library(speckle)
+library(SuperCellCyto)
+library(parallel)
+library(here)
+library(BiocParallel)
+library(Spectre)
+library(pheatmap)
+library(scales)
+library(cyCombine)
+library(HDCytoData)
+library(ggrepel)
+library(ggridges)
+```
+
+# Prepare data
+
+```{r message=FALSE, warning=FALSE}
+sce <- Krieg_Anti_PD_1_SE()
+
+cell_info <- data.table(as.data.frame(rowData(sce)))
+markers <- data.table(as.data.frame(colData(sce)))
+cell_dat <- data.table(as.data.frame(assay(sce)))
+
+cell_dat <- cbind(cell_dat, cell_info)
+```
+
+```{r}
+# keep only the cell type and cell state markers
+markers <- markers[marker_class != "none"]
+markers_name <- markers$marker_name
+
+# asinh transformation with co-factor 5
+markers_name_asinh <- paste0(markers_name, "_asinh_cf5")
+
+monocyte_markers <- paste0(
+  c(
+    "CD14", "CD33", "HLA-DR", "ICAM-1", "CD64", "CD141", "CD86", "CD11c",
+    "CD38", "CD274_PDL1", "CD11b"
+  ),
+  "_asinh_cf5"
+)
+```
+
+```{r}
+cell_dat <- cell_dat[, c(markers_name, "group_id", "batch_id", "sample_id"), with = FALSE]
+
+# arc-sinh transformation with co-factor 5
+cell_dat[, (markers_name_asinh) := lapply(.SD, function(x) asinh(x / 5)), .SDcols = markers_name]
+
+# save ram, remove untransformed markers
+cell_dat[, c(markers_name) := NULL]
+
+# Change group field into factor
+cell_dat[, group_id := factor(group_id, levels = c("NR", "R"))]
+cell_dat[, cell_id := paste0("cell_", seq(nrow(cell_dat)))]
+```
+
+# Run SuperCellCyto
+
+```{r}
+BPPARAM <- MulticoreParam(workers = detectCores() - 1, tasks = length(unique(cell_dat$sample_id)))
+
+supercell_obj <- runSuperCellCyto(
+  dt = cell_dat,
+  markers = markers_name_asinh,
+  sample_colname = "sample_id",
+  cell_id_colname = "cell_id",
+  gam = 20,
+  BPPARAM = BPPARAM,
+  load_balancing = TRUE
+)
+
+supercell_mat <- supercell_obj$supercell_expression_matrix
+supercell_cell_map <- supercell_obj$supercell_cell_map
+
+sample_info <- unique(cell_info)
+supercell_mat <- merge.data.table(supercell_mat, sample_info)
+```
+
+# Correct batch effect
+
+```{r message=FALSE}
+setnames(supercell_mat, "sample_id", "sample")
+setnames(supercell_mat, "batch_id", "batch")
+
+cycombine_corrected <- batch_correct(
+  df = supercell_mat[, c(markers_name_asinh, "batch", "sample", "group_id"), with = FALSE],
+  xdim = 4,
+  ydim = 4,
+  seed = 42,
+  markers = markers_name_asinh,
+  covar = "group_id"
+)
+```
+
+Check outcome
+
+```{r}
+setnames(cycombine_corrected, "sample", "sample_id")
+make.mds.plot(data.table(cycombine_corrected), "sample_id", markers_name_asinh, "batch")
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=10, fig.height=8}
+all_data <- melt(cycombine_corrected, id.vars = c("batch"), measure.vars = markers_name_asinh)
+all_data$variable <- gsub("_asinh_cf5", "", all_data$variable)
+
+ggplot(all_data, aes(x = value, y = batch, fill = batch, color = batch)) +
+  geom_density_ridges(alpha = 0.3) +
+  facet_wrap(~variable) +
+  theme_ridges() +
+  scale_x_continuous(breaks = pretty_breaks(n = 5), limits = c(-10, 10)) +
+  labs(x = "Marker Expression", y = "Batch", title = "Distribution of Marker Expression for Corrected Supercells")
+```
+
+# Cluster the supercells using FlowSOM.
+
+```{r message=FALSE, warning=FALSE}
+cycombine_corrected <- run.flowsom(
+  cycombine_corrected,
+  use.cols = markers_name_asinh,
+  xdim = 20,
+  ydim = 20,
+  meta.k = 50,
+  clust.seed = 42,
+  meta.seed = 42
+)
+```
+
+Expand to single cell.
+
+```{r}
+cycombine_corrected$SuperCellId <- supercell_mat$SuperCellId
+
+expanded_supercell <- merge.data.table(
+  supercell_cell_map,
+  cycombine_corrected[, c("SuperCellId", "FlowSOM_cluster", "FlowSOM_metacluster", "group_id", "batch")],
+  by.x = "SuperCellID",
+  by.y = "SuperCellId"
+)
+```
+
+Remove underrepresented clusters, that is those which contain less than 3 cells
+from each sample.
+
+```{r}
+nsamples_min <- nrow(sample_info)
+clust_cnt <- table(expanded_supercell$FlowSOM_metacluster, expanded_supercell$Sample)
+clust_to_keep <- as.numeric(names(which(rowSums(clust_cnt > 3) >= nsamples_min)))
+
+expanded_supercell_sub <- expanded_supercell[FlowSOM_metacluster %in% clust_to_keep]
+supercell_mat_sub <- cycombine_corrected[FlowSOM_metacluster %in% clust_to_keep]
+```
+
+Run propeller.
+```{r message=FALSE}
+prop <- getTransformedProps(
+  clusters = expanded_supercell_sub$FlowSOM_metacluster,
+  sample = expanded_supercell_sub$Sample
+)
+
+sample_info[, sample_id := factor(sample_id, levels = colnames(prop$Counts))]
+sample_info <- sample_info[order(sample_id)]
+
+designAS <- model.matrix(~ 0 + sample_info$group_id + sample_info$batch_id)
+colnames(designAS) <- c("NR", "R", "batch29vs23")
+mycontr <- makeContrasts(NR - R, levels = designAS)
+
+test_res <- propeller.ttest(
+  prop.list = prop, design = designAS, contrasts = mycontr,
+  robust = TRUE, trend = FALSE, sort = TRUE
+)
+test_res
+```
+
+Identify which clusters are our rare monocyte.
+
+```{r}
+median_exp <- supercell_mat_sub[, lapply(.SD, median), by = FlowSOM_metacluster, .SDcols = markers_name_asinh]
+median_exp[, FlowSOM_metacluster := factor(FlowSOM_metacluster, levels = rownames(test_res))]
+median_exp <- median_exp[order(FlowSOM_metacluster)]
+median_exp_df <- data.frame(median_exp[, markers_name_asinh, with = FALSE])
+names(median_exp_df) <- gsub("_asinh_cf5", "", markers_name_asinh)
+rownames(median_exp_df) <- median_exp$FlowSOM_metacluster
+
+row_meta <- data.table(pval = test_res$FDR)
+row_meta[, DA_sig := ifelse(pval <= 0.1, "yes", "no")]
+row_meta <- data.frame(DA_sig = row_meta$DA_sig)
+rownames(row_meta) <- rownames(test_res)
+
+col_meta <- data.table(marker = markers_name_asinh)
+col_meta[, monocyte_marker := ifelse(marker %in% monocyte_markers, "yes", "no")]
+col_meta_df <- data.frame(monocyte_marker = col_meta$monocyte)
+rownames(col_meta_df) <- gsub("_asinh_cf5", "", col_meta$marker)
+
+# So monocyte markers are together
+col_order <- col_meta[order(monocyte_marker)]$marker
+col_order <- gsub("_asinh_cf5", "", col_order)
+median_exp_df <- median_exp_df[col_order]
+
+pheatmap(
+  mat = median_exp_df,
+  annotation_row = row_meta,
+  annotation_col = col_meta_df,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  annotation_colors = list(
+    monocyte_marker = c("yes" = "darkgreen", "no" = "grey"),
+    DA_sig = c("yes" = "red", "no" = "grey")
+  ),
+  main = "Median expression of markers for each cluster"
+)
+```
+
+Cluster 10 is our monocyte cluster. 
+Plot the proportion of single cells in the cluster out.
+
+```{r}
+dt_prop <- merge.data.table(
+  x = data.table(prop$Proportions),
+  y = sample_info,
+  by.x = "sample",
+  by.y = "sample_id"
+)
+
+sig_clust <- rownames(test_res[test_res$FDR <= 0.1, ])
+
+dt_prop <- dt_prop[clusters %in% sig_clust, ]
+dt_prop[, clusters := paste0("cluster_", clusters)]
+```
+
+```{r}
+ggplot(dt_prop, aes(x = group_id, y = N, color = group_id)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point() +
+  facet_wrap(~clusters) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(
+    x = "Group", y = "Proportion of cells",
+    title = "Proportion of cells for differentially abundant clusters",
+    colour = "Group"
+  )
+```
+
+# DA test at the supercell level
+
+```{r}
+supercell_mat_sub_sup <- cycombine_corrected[FlowSOM_metacluster %in% unique(expanded_supercell_sub$FlowSOM_metacluster)]
+```
+
+Run propeller.
+```{r message=FALSE}
+prop_sup <- getTransformedProps(
+  clusters = supercell_mat_sub_sup$FlowSOM_metacluster,
+  sample = supercell_mat_sub_sup$sample_id
+)
+
+sample_info[, sample_id := factor(sample_id, levels = colnames(prop$Counts))]
+sample_info <- sample_info[order(sample_id)]
+
+designAS <- model.matrix(~ 0 + sample_info$group_id + sample_info$batch_id)
+colnames(designAS) <- c("NR", "R", "batch29vs23")
+mycontr <- makeContrasts(NR - R, levels = designAS)
+
+test_res_sup <- propeller.ttest(
+  prop.list = prop_sup, design = designAS, contrasts = mycontr,
+  robust = TRUE, trend = FALSE, sort = TRUE
+)
+test_res_sup
+```
+
+Compare the FDR
+
+```{r}
+common_clusters <- intersect(rownames(test_res), rownames(test_res_sup))
+pvalue_comparison <- data.table(
+  clusters = common_clusters,
+  pval_single_cell = test_res[common_clusters, ]$FDR,
+  pval_supercell = test_res_sup[common_clusters, ]$FDR
+)
+pvalue_comparison[, pval_single_cell_sig := ifelse(pval_single_cell <= 0.1, "yes", "no")]
+pvalue_comparison[, pval_supercell_sig := ifelse(pval_supercell <= 0.1, "yes", "no")]
+
+pvalue_comparison[, clusters := paste0("cluster_", clusters)]
+
+pvalue_comparison_molten <- melt(pvalue_comparison,
+  id.vars = "clusters",
+  measure.vars = c("pval_single_cell", "pval_supercell")
+)
+pvalue_comparison_molten[, variable := gsub("pval_", "", variable)]
+pvalue_comparison_molten[, log_val := -log10(value)]
+```
+
+```{r}
+ggplot(pvalue_comparison_molten, aes(x = clusters, y = log_val, color = variable)) +
+  geom_point(alpha = 0.5, size = 3) +
+  geom_hline(yintercept = -log10(0.1), linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("single_cell" = "blue", "supercell" = "black")) +
+  scale_y_continuous(breaks = pretty_breaks(n = 10)) +
+  labs(
+    x = "Cluster", y = "-log10(FDR)", colour = "Test level",
+    title = "Comparison of FDR obtained for DA test performed at single cell or supercell level"
+  ) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+The difference in proportion of supercells for our rare monocyte subset (cluster 10)
+is also significant.
+Let's plot it out.
+
+```{r}
+clust_to_look <- c(10)
+
+supercell_prop <- data.table(prop_sup$Proportions)
+supercell_prop <- supercell_prop[clusters %in% clust_to_look]
+supercell_prop[, type := "supercell"]
+supercell_prop <- merge.data.table(supercell_prop, sample_info, by.x = "sample", by.y = "sample_id")
+supercell_prop[, clusters := paste0("cluster_", clusters)]
+```
+
+```{r}
+ggplot(supercell_prop, aes(x = group_id, y = N, color = group_id)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point() +
+  facet_wrap(~clusters) +
+  theme_classic() +
+  scale_y_continuous(breaks = pretty_breaks(n = 5)) +
+  labs(x = "Group", y = "Proportion of supercells", colour = "Group")
+```
+
+# References

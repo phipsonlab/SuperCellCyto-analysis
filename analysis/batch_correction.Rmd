@@ -1,0 +1,315 @@
+---
+title: "Mitigating Batch Effects in the Integration of Multi-Batch Cytometry Data at the Supercell Level"
+author: "Givanna Putri"
+bibliography: ref.bib
+date: "2023-05-24"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+In the analysis, we explore the potential for reducing batch effects at the supercell level. 
+We employed 2 different batch correction methodologies for this purpose: 
+CytofRUV [@trussart2020removing] and cyCombine [@pedersen2022cycombine].
+
+The dataset used in this analysis originates from the CytofRUV study.
+It consists of Peripheral Blood Mononuclear Cell (PBMC) samples from 3 Chronic 
+Lymphocytic Leukaemia (CLL) patients and 9 Healthy Controls (HC). 
+Each patient's sample was duplicated across two batches, with each batch comprising 12 samples, 
+totaling 24 samples. 
+All samples were stained with a 31-antibody panel, targeting 19 lineage markers 
+and 12 functional proteins, and subsequently quantified using Cytof.
+The complete list of the antibodies used can be found in the CytofRUV manuscript [@trussart2020removing].
+
+For this analysis, we employed the following steps. 
+First, we downloaded the raw FCS files from FlowRepository 
+[FR-FCM-Z2L2](http://flowrepository.org/id/FR-FCM-Z2L2). 
+Following this, the data pre-processed using the R script provided with the CytofRUV manuscript
+(the script is accessible in `code/batch_correction/prepare_data.R`). 
+Once the pre-processing was completed, we generated supercells using SuperCellCyto
+(R script is available in `code/batch_correction/run_supercell.R`). 
+Subsequently, we applied CytofRUV and cyCombine to the supercells. 
+Scripts facilitating these corrections are available in `code/batch_correction/run_batch_correction_supercells.R`.
+
+The findings reported here represent the results following the application of SuperCellCyto
+and batch correction methods.
+
+# Load libraries
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(data.table)
+library(limma)
+library(ggplot2)
+library(ggrepel)
+library(Spectre)
+library(pheatmap)
+library(scales)
+library(ggpubr)
+library(RColorBrewer)
+library(ggridges)
+```
+
+# Load data
+
+Sample metadata.
+```{r}
+sample_metadata <- fread(here("data", "trussart_cytofruv", "metadata", "Metadata.csv"))
+```
+
+Markers.
+
+```{r}
+panel_info <- fread(here("data", "trussart_cytofruv", "metadata", "Panel.csv"))
+panel_info[, reporter_marker := paste(fcs_colname, antigen, "asinh", "cf5", sep = "_")]
+
+markers <- panel_info$reporter_marker
+
+cell_type_markers <- panel_info[panel_info$marker_class == "type"]$reporter_marker
+```
+
+
+All cells.
+
+```{r}
+cell_dat <- fread(here("output", "trussart_cytofruv", "20230515_supercell_out", "cell_dat_asinh.csv"))
+# Remove the untransformed markers as these are useless
+cell_dat <- cell_dat[, c(32:68)]
+cell_dat[, batch := factor(paste0("batch", batch))]
+```
+
+Uncorrected supercells.
+
+```{r}
+supercell_exp_mat <- fread(here("output", "trussart_cytofruv", "20230524", "supercellExpMat_rep1_umap.csv"))
+supercell_exp_mat[, batch := factor(paste0("batch", batch))]
+```
+
+Corrected supercells.
+
+```{r}
+batch_corrected_supercells <- list()
+batch_corrected_supercells[["CytofRUV"]] <- fread(here("output", "trussart_cytofruv", "20230524", "supercellExpMat_postCytofRUV.csv"))
+batch_corrected_supercells[["CytofRUV"]][, batch := factor(paste0("batch", batch))]
+
+batch_corrected_supercells[["cyCombine"]] <- fread(here("output", "trussart_cytofruv", "20230704", "supercellExpMat_postCycombine.csv"))
+batch_corrected_supercells[["cyCombine"]][, batch := paste0("batch", batch)]
+setnames(batch_corrected_supercells$cyCombine, "sample", "sample_id")
+```
+
+# Assess batch correction result
+
+## MDS plot
+
+We evaluate the performance of the batch correction approaches by 
+generating MDS plots.
+
+```{r}
+mds_plots <- list()
+
+mds_plots[[1]] <- make.mds.plot(
+  dat = cell_dat,
+  sample_col = "sample_id",
+  markers = markers,
+  colour_by = "batch",
+  font_size = 2
+) + labs(title = "Uncorrected cells", colour = "Batch") +
+  scale_color_manual(values = c("batch1" = "#0047AB", "batch2" = "#DC143C"))
+
+mds_plots[[2]] <- make.mds.plot(
+  dat = supercell_exp_mat,
+  sample_col = "sample_id",
+  markers = markers,
+  colour_by = "batch",
+  font_size = 2
+) + labs(title = "Uncorrected supercells", colour = "Batch") +
+  scale_color_manual(values = c("batch1" = "#0047AB", "batch2" = "#DC143C"))
+
+mds_plots[[3]] <- make.mds.plot(
+  dat = batch_corrected_supercells$CytofRUV,
+  sample_col = "sample_id",
+  markers = markers,
+  colour_by = "batch",
+  font_size = 2
+) + labs(title = "CytofRUV corrected supercells", colour = "Batch") +
+  scale_color_manual(values = c("batch1" = "#0047AB", "batch2" = "#DC143C"))
+
+mds_plots[[4]] <- make.mds.plot(
+  dat = batch_corrected_supercells$cyCombine,
+  sample_col = "sample_id",
+  markers = markers,
+  colour_by = "batch",
+  font_size = 2
+) + labs(title = "cyCombine corrected supercells", colour = "Batch") +
+  scale_color_manual(values = c("batch1" = "#0047AB", "batch2" = "#DC143C"))
+```
+
+```{r warning=FALSE, fig.width=10, fig.height=8}
+ggarrange(plotlist = mds_plots, ncol = 2, nrow = 2, common.legend = TRUE, legend = "bottom")
+```
+
+In the MDS plots of uncorrected supercells, the 1st dimension separates the CLL 
+samples from the HC samples, while the 2nd dimension separates the two batches. 
+After applying batch correction methods, the separation of CLL and HC samples 
+are maintained along the 1st dimension. 
+However, the 2nd dimension, post-correction, no longer separate the batches.
+
+## UMAP plot
+
+Complementing the MDS plots, we will also the UMAP plots of the supercells coloured
+by the batches.
+
+```{r fig.width=12, fig.height=4}
+umap_plt_dat <- rbind(
+  batch_corrected_supercells$CytofRUV[, c("UMAP_X", "UMAP_Y", "batch", "patient_id")],
+  batch_corrected_supercells$cyCombine[, c("UMAP_X", "UMAP_Y", "batch", "patient_id")],
+  supercell_exp_mat[, c("UMAP_X", "UMAP_Y", "batch", "patient_id")]
+)
+umap_plt_dat$correction <- c(
+  rep("CytofRUV", nrow(batch_corrected_supercells$CytofRUV)),
+  rep("cyCombine", nrow(batch_corrected_supercells$cyCombine)),
+  rep("None", nrow(supercell_exp_mat))
+)
+
+ggplot(umap_plt_dat, aes(x = UMAP_X, y = UMAP_Y, colour = batch)) +
+  geom_point(size = 0.3, alpha = 0.3) +
+  facet_grid(cols = vars(patient_id), rows = vars(correction)) +
+  scale_color_manual(values = c("batch1" = "#F8766D", "batch2" = "#00BFC4")) +
+  theme_classic() +
+  guides(colour = guide_legend(override.aes = list(size = 5, alpha = 1))) +
+  theme(legend.position = "bottom")
+```
+
+The UMAP plots demonstrate that following batch correction, supercells from 
+different batches overlap more so compared to those that are not corrected,
+further indicating the effective reduction of batch effect.
+
+## Computing Earth Mover Distance
+
+The Earth Mover's Distance (EMD) metric is often employed to measure the efficacy 
+of batch effect correction algorithm.
+It can be applied to each marker to measure the dissimilarity in their distributions 
+across multiple batches. 
+Following successful batch correction, the EMD score for any marker is expected to decrease. 
+
+To assess the effectiveness of CytofRUV and cyCombine, for each paired sample
+(indicated by the patient_id), we obtain distribution of each marker, by binning
+the data into bins of size 0.1, from either all cells or supercells.
+Thereafter, for each marker we calculate EMD comparing the distribution between
+the paired sample.
+
+```{r}
+calc_emd <- function(dat, markers, patient_ids) {
+  emd_dist <- lapply(patient_ids, function(pid) {
+    emd_per_marker <- lapply(markers, function(marker) {
+      exp <- dat[patient_id == pid, c("batch", marker), with = FALSE]
+      hist_bins <- lapply(c("batch1", "batch2"), function(bat_id) {
+        exp_bat <- exp[batch == bat_id, ][[marker]]
+        as.matrix(graphics::hist(exp_bat, breaks = seq(-100, 100, by = 0.1), plot = FALSE)$counts)
+      })
+      emdist::emd2d(hist_bins[[1]], hist_bins[[2]])
+    })
+    emd_per_marker <- data.table(
+      marker = markers,
+      emd = unlist(emd_per_marker),
+      patient_id = pid
+    )
+    return(emd_per_marker)
+  })
+  emd_dist <- rbindlist(emd_dist)
+  return(emd_dist)
+}
+```
+
+Calculate EMDs.
+
+```{r}
+patient_ids <- unique(supercell_exp_mat$patient_id)
+
+emd_uncorrected <- calc_emd(supercell_exp_mat, markers, patient_ids)
+emd_cytofruv <- calc_emd(batch_corrected_supercells$CytofRUV, markers, patient_ids)
+emd_cycombine <- calc_emd(batch_corrected_supercells$cyCombine, markers, patient_ids)
+
+emd_dist <- rbindlist(list(emd_uncorrected, emd_cytofruv, emd_cycombine))
+emd_dist[, correction := c(
+  rep("Uncorrected supercells", nrow(emd_uncorrected)),
+  rep("CytofRUV", nrow(emd_cytofruv)),
+  rep("cyCombine", nrow(emd_cycombine))
+)]
+emd_dist[, emd_rounded := round(emd, digits = 4)]
+emd_dist[, sqrt_emd := sqrt(emd_rounded)]
+```
+
+```{r}
+ggplot(emd_dist, aes(x = patient_id, y = sqrt_emd, colour = correction)) +
+  geom_boxplot(outlier.size = 0.7) +
+  theme_classic() +
+  scale_color_manual(values = c(
+    "CytofRUV" = "#FFAA33",
+    "cyCombine" = "#0047AB",
+    "Uncorrected supercells" = "#A9A9A9"
+  )) +
+  labs(
+    y = "Square Root of EMD", x = "Patient ID", colour = "Batch Correction Method",
+    title = "Comparison of EMD Across Corrected and Uncorrected Supercells",
+    subtitle = "EMD: Earth Mover Distance"
+  ) +
+  scale_y_continuous(breaks = pretty_breaks(n = 10))
+```
+
+In general, for all methods, we see a reduction in EMD score.
+
+# Compare the distribution of the markers
+
+Just between the uncorrected and corrected supercells.
+
+```{r}
+all_data <- list(
+  CytofRUV = batch_corrected_supercells$CytofRUV,
+  cyCombine = batch_corrected_supercells$cyCombine,
+  uncorrected = supercell_exp_mat
+)
+
+all_data <- rbindlist(all_data, idcol = "correction", fill = TRUE)
+all_data <- all_data[, c(markers, "batch", "correction"), with = FALSE]
+
+all_data <- melt(all_data, id.vars = c("batch", "correction"))
+
+all_data[, variable := gsub("^[^_]*_", "", gsub("_asinh_cf5", "", variable))]
+```
+
+Plot the distribution for CD14, CD45RA, and PUMA for the main figure.
+
+```{r message=FALSE}
+subset_marker_dist <- all_data[variable %in% c("CD14", "CD45RA", "PUMA"), ]
+# for ordering the panels
+subset_marker_dist[, correction := factor(correction, levels = c("uncorrected", "CytofRUV", "cyCombine"))]
+
+ggplot(subset_marker_dist, aes(x = value, y = batch)) +
+  geom_density_ridges(aes(fill = correction, color = correction), alpha = 0.3) +
+  facet_grid(rows = vars(variable), cols = vars(correction)) +
+  theme_ridges() +
+  theme(strip.text.x = element_text(margin = margin(b = 3))) +
+  scale_fill_manual(values = c("uncorrected" = "#F8766D", "CytofRUV" = "#00BFC4", "cyCombine" = "#7CAE00")) +
+  scale_color_manual(values = c("uncorrected" = "#F8766D", "CytofRUV" = "#00BFC4", "cyCombine" = "#7CAE00")) +
+  labs(x = "Marker Expression", y = "Batch", title = "Distribution of Marker Expression")
+```
+
+Plot the rest of the distribution out.
+
+```{r message=FALSE, fig.width=10, fig.height=30}
+marker_dist <- all_data[!variable %in% c("CD14", "CD45RA", "PUMA"), ]
+marker_dist[, correction := factor(correction, levels = c("uncorrected", "CytofRUV", "cyCombine"))]
+
+ggplot(marker_dist, aes(x = value, y = batch)) +
+  geom_density_ridges(aes(fill = correction, color = correction), alpha = 0.3) +
+  facet_grid(rows = vars(variable), cols = vars(correction)) +
+  theme_ridges() +
+  theme(strip.text.x = element_text(margin = margin(b = 3)), strip.text.y = element_text(margin = margin(b = 3))) +
+  scale_fill_manual(values = c("uncorrected" = "#F8766D", "CytofRUV" = "#00BFC4", "cyCombine" = "#7CAE00")) +
+  scale_color_manual(values = c("uncorrected" = "#F8766D", "CytofRUV" = "#00BFC4", "cyCombine" = "#7CAE00")) +
+  labs(x = "Marker Expression", y = "Batch", title = "Distribution of Marker Expression")
+```
+
+# References
