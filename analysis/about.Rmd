@@ -10,4 +10,4 @@ editor_options:
 This site presents the code and evaluation for the SuperCellCyto package.
 
 All the code and results of this analysis are available from GitHub at
-https://github.com/phipsonlab/SuperCellCyto_analysis
+https://github.com/phipsonlab/SuperCellCyto-analysis
