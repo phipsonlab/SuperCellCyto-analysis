@@ -121,7 +121,7 @@ cytof_supercell_annotations <- data.table(
     predicted_population = knn_prediction
 )
 
-supercell_cell_map <- fread("output/clustering_benchmarking/20230511/levine_32dim/supercell_runs/supercellCellMap_gamma20.csv")
+supercell_cell_map <- fread("output/explore_supercell_purity_clustering/20230511/levine_32dim/supercell_runs/supercellCellMap_gamma20.csv")
 
 cytof_supercell_annotations <- merge.data.table(
     x = cytof_supercell_annotations,

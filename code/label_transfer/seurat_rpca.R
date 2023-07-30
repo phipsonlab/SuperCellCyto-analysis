@@ -121,7 +121,7 @@ cytof_supercell_annotations <- data.table(
     prediction_confidence = cytof_seurat$prediction_confidence
 )
 
-supercell_cell_map <- fread(here("output", "clustering_benchmarking", "20230511",
+supercell_cell_map <- fread(here("output", "explore_supercell_purity_clustering", "20230511",
                                  "levine_32dim", "supercell_runs", "supercellCellMap_gamma20.csv"))
 
 cytof_supercell_annotations <- merge.data.table(
