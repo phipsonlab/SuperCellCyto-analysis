@@ -123,7 +123,7 @@ pheatmap(
 Using the heatmap, we derive the following cell type annotations.
 
 ```{r}
-annotation <- rep("Unknown", 46)
+annotation <- rep("CD45- and/or CD19-", 46)
 annotation[41] <- "Pre B cells"
 annotation[18] <- "Immature B cells"
 annotation[26] <- "Transitional B cells"
@@ -143,7 +143,7 @@ Create the heatmap which show median expression and also the annotation for each
 ```{r fig.width=10, fig.height=3}
 # The order is for ordering the heatmap so the same cell types are together
 heatmap_annot_col <- annotation_df[order(cell_type)]
-heatmap_annot_col <- heatmap_annot_col[cell_type != "Unknown"]
+heatmap_annot_col <- heatmap_annot_col[cell_type != "CD45- and/or CD19-"]
 heatmap_annot_col <- data.frame(heatmap_annot_col, row.names = "cluster")
 annot_cell_types <- unique(heatmap_annot_col$cell_type)
 
@@ -185,7 +185,7 @@ The code to generate the UMAP coordinates is available on `code/oetjen_bm_data/c
 cell_types <- sort(unique(supercell_mat_annot$cell_type))
 colour_scheme <- viridis(n = length(cell_types) - 1, option = "turbo")
 names(colour_scheme) <- cell_types[c(1:length(cell_types) - 1)]
-colour_scheme["Unknown"] <- "#D3D3D3"
+colour_scheme["CD45- and/or CD19-"] <- "#D3D3D3"
 
 # So unknown is at the bottom.
 supercell_mat_annot[, cell_type := factor(cell_type, levels = cell_types)]
@@ -205,7 +205,7 @@ We will exclude those we assigned "unknown" label.
 
 Remove unassigned for heatmap.
 ```{r}
-supercell_mat_annot_noUnassigned <- supercell_mat_annot[cell_type != "Unknown"]
+supercell_mat_annot_noUnassigned <- supercell_mat_annot[cell_type != "CD45- and/or CD19-"]
 ```
 
 Check the distribution of the marker expression of the single cells expanded
@@ -228,7 +228,7 @@ cell_map <- merge.data.table(
   by.x = "SuperCellID",
   by.y = "SuperCellId"
 )
-cell_map <- cell_map[cell_type != "Unknown", ]
+cell_map <- cell_map[cell_type != "CD45- and/or CD19-", ]
 
 cell_mat <- merge.data.table(
   x = cell_mat,
@@ -270,7 +270,7 @@ ggplot(cell_mat_long, aes(x = value, y = marker, colour = marker, fill = marker)
 How many supercells unannotated.
 
 ```{r}
-table(supercell_mat_annot$cell_type)["Unknown"] / nrow(supercell_mat_annot)
+table(supercell_mat_annot$cell_type)["CD45- and/or CD19-"] / nrow(supercell_mat_annot)
 ```
 
 How many plasma cells we found?
@@ -279,7 +279,8 @@ How many plasma cells we found?
 plasma_cell_supercells <- supercell_mat_annot[cell_type == "Plasma cells"]
 plasma_cells <- cell_map_full[SuperCellID %in% plasma_cell_supercells$SuperCellId]
 nrow(plasma_cells)
-100 * nrow(plasma_cells) / nrow(cell_map_full)
+100*nrow(plasma_cells) / nrow(cell_map_full)
+nrow(plasma_cell_supercells)
 ```
 
 
@@ -296,7 +297,7 @@ cell_map <- merge.data.table(
 # Proportion for each cluster and cell type
 cell_type_proportion <- cell_map[, .(cnt_per_clust = .N), by = c("cell_type")]
 cell_type_proportion[, proportion := cnt_per_clust / nrow(cell_map)]
-cell_type_proportion_noUnassigned <- cell_type_proportion[cell_type != "Unknown", ]
+cell_type_proportion_noUnassigned <- cell_type_proportion[cell_type != "CD45- and/or CD19-", ]
 
 # Get the cell type name ordered alphabetically so we match the colour to the heatmap
 ordered_cell_name <- sort(cell_type_proportion_noUnassigned$cell_type)
@@ -319,7 +320,7 @@ ggplot(
 ) +
   geom_point(size = 3) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") +
   scale_y_continuous(breaks = pretty_breaks(n = 10)) +
   scale_color_manual(values = cell_name_color, breaks = names(cell_name_color)) +
   labs(

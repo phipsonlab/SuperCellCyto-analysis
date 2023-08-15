@@ -52,28 +52,38 @@ harmony_res <- fread(here("output", "label_transfer", "harmony_knn.csv"))
 rpca_res <- fread(here("output", "label_transfer", "seurat_rPCA.csv"))
 ```
 
+```{r}
+rpca_res_singlecell <- fread(here("output", "label_transfer", "seurat_rPCA_singlecell.csv"))
+harmony_res_singlecell <- fread(here("output", "label_transfer", "harmony_knn_singlecell.csv"))
+```
+
+
 We shall remove the unassigned cells as we don't know their identity.
 ```{r}
 harmony_res <- harmony_res[Gated_Population != "unassigned"]
 rpca_res <- rpca_res[Gated_Population != "unassigned"]
 ```
 
+```{r}
+rpca_res_singlecell <- rpca_res_singlecell[Gated_Population != "unassigned"]
+harmony_res_singlecell <- harmony_res_singlecell[Gated_Population != "unassigned"]
+```
+
+
 # Harmony with kNN
 
-Here, we first employ Harmony do align supercells with the CITEseq data,
-and thereafter use kNN classifier to transfer the label of the aligned
-CITEseq data to supercell.
+## Supercell
 
 ```{r}
-conf_mat <- with(harmony_res, table(predicted_population, Gated_Population))
-conf_mat_proportion <- sweep(conf_mat, 2, colSums(conf_mat), "/")
-conf_mat_dt <- data.table(conf_mat_proportion)
-conf_mat_dt <- conf_mat_dt[order(Gated_Population, predicted_population)]
-conf_mat_dt <- conf_mat_dt[N > 0]
+conf_mat_harmony_supercell <- with(harmony_res, table(predicted_population, Gated_Population))
+conf_mat_proportion <- sweep(conf_mat_harmony_supercell, 2, colSums(conf_mat_harmony_supercell), "/")
+conf_mat_harmony_supercell_dt <- data.table(conf_mat_proportion)
+conf_mat_harmony_supercell_dt <- conf_mat_harmony_supercell_dt[order(Gated_Population, predicted_population)]
+conf_mat_harmony_supercell_dt <- conf_mat_harmony_supercell_dt[N > 0]
 ```
 
 ```{r fig.width=11, fig.height=11}
-ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
+ggplot(conf_mat_harmony_supercell_dt, aes(x=Gated_Population, y=predicted_population)) +
   geom_point(aes(size = N, fill = N), pch=21, color="grey") +
   scale_fill_distiller(palette = "RdBu", direction = -1) +
   theme_minimal() +
@@ -87,18 +97,45 @@ ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
 
 ```
 
-# rPCA
+## Singlecell
 
 ```{r}
-conf_mat <- with(rpca_res, table(predicted_population, Gated_Population))
-conf_mat_proportion <- sweep(conf_mat, 2, colSums(conf_mat), "/")
-conf_mat_dt <- data.table(conf_mat_proportion)
-conf_mat_dt <- conf_mat_dt[order(Gated_Population, predicted_population)]
-conf_mat_dt <- conf_mat_dt[N > 0]
+conf_mat_harmony_singlecell <- with(harmony_res_singlecell, table(predicted_population, Gated_Population))
+conf_mat_proportion <- sweep(conf_mat_harmony_singlecell, 2, colSums(conf_mat_harmony_singlecell), "/")
+conf_mat_harmony_singlecell_dt <- data.table(conf_mat_proportion)
+conf_mat_harmony_singlecell_dt <- conf_mat_harmony_singlecell_dt[order(Gated_Population, predicted_population)]
+conf_mat_harmony_singlecell_dt <- conf_mat_harmony_singlecell_dt[N > 0]
 ```
 
 ```{r fig.width=11, fig.height=11}
-ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
+ggplot(conf_mat_harmony_singlecell_dt, aes(x=Gated_Population, y=predicted_population)) +
+  geom_point(aes(size = N, fill = N), pch=21, color="grey") +
+  scale_fill_distiller(palette = "RdBu", direction = -1) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    panel.grid.major = element_blank()
+  ) +
+  labs(x = "Actual Label", y = "Predicted Label", size = "Proportion", fill = "Proportion",
+       title = "Harmony Combined with kNN Single Cell")
+
+```
+
+# rPCA
+
+## Supercell
+
+```{r}
+conf_mat_rpca_supercell <- with(rpca_res, table(predicted_population, Gated_Population))
+conf_mat_proportion <- sweep(conf_mat_rpca_supercell, 2, colSums(conf_mat_rpca_supercell), "/")
+conf_mat_rpca_supercell_dt <- data.table(conf_mat_proportion)
+conf_mat_rpca_supercell_dt <- conf_mat_rpca_supercell_dt[order(Gated_Population, predicted_population)]
+conf_mat_rpca_supercell_dt <- conf_mat_rpca_supercell_dt[N > 0]
+```
+
+```{r fig.width=11, fig.height=11}
+ggplot(conf_mat_rpca_supercell_dt, aes(x=Gated_Population, y=predicted_population)) +
   geom_point(aes(size = N, fill = N), pch=21, color="grey") +
   scale_fill_distiller(palette = "RdBu", direction = -1) +
   theme_minimal() +
@@ -109,6 +146,31 @@ ggplot(conf_mat_dt, aes(x=Gated_Population, y=predicted_population)) +
   ) +
   labs(x = "Actual Label", y = "Predicted Label", size = "Proportion", fill = "Proportion",
        title = "Seurat rPCA")
+
+```
+
+## Single cell
+
+```{r}
+conf_mat_rpca_singlecell <- with(rpca_res_singlecell, table(predicted_population, Gated_Population))
+conf_mat_proportion <- sweep(conf_mat_rpca_singlecell, 2, colSums(conf_mat_rpca_singlecell), "/")
+conf_mat_rpca_singlecell_dt <- data.table(conf_mat_proportion)
+conf_mat_rpca_singlecell_dt <- conf_mat_rpca_singlecell_dt[order(Gated_Population, predicted_population)]
+conf_mat_rpca_singlecell_dt <- conf_mat_rpca_singlecell_dt[N > 0]
+```
+
+```{r fig.width=11, fig.height=11}
+ggplot(conf_mat_rpca_singlecell_dt, aes(x=Gated_Population, y=predicted_population)) +
+  geom_point(aes(size = N, fill = N), pch=21, color="grey") +
+  scale_fill_distiller(palette = "RdBu", direction = -1) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    panel.grid.major = element_blank()
+  ) +
+  labs(x = "Actual Label", y = "Predicted Label", size = "Proportion", fill = "Proportion",
+       title = "Seurat rPCA Single Cell")
 
 ```
 

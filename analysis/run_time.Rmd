@@ -19,175 +19,371 @@ library(data.table)
 library(stringr)
 library(ggplot2)
 library(scales)
+library(viridis)
 ```
 
-# How long did supercell creation take?
+Function to convert the log 10 y-axis scale to actual number.
+Just so it's easier to interpret.
+So instead of showing 1,2,3, which are the log 10 values, we show 10^1, 10^2, 10^3, etc.
 
 ```{r}
-run_time_clust_benchmark <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
+convert_log10_to_actual <- function(labels, dp_below_1 = 2) {
+  transformed_labs <- sapply(labels, function(x) {
+    new_lab <- 10^x
+    
+    # if over 1, then round to integer, otherwise round to whatever dp_below_1 is
+    if (new_lab >= 1) {
+      new_lab <- round(new_lab)
+    } else {
+      new_lab <- round(new_lab, dp_below_1)
+      new_lab <- sprintf(paste0("%.", dp_below_1, "f"), new_lab)
+    }
+    
+    return(new_lab)
+  })
+}
+```
+
+
+# Supercell creation
+
+```{r}
+datasets <- c("samusik_all", "levine_32dim")
+supercell_runtime <- lapply(datasets, function(dt_source) {
     dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
                             dt_source, "supercell_runs", "supercell_runtime.txt"),
                        sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
-    dt$gamma <- str_split_i(dt$dataset, "_", 2) 
-    dt$dataset <- str_to_title(dt_source)
     dt$duration_seconds <- gsub(" sec elapsed", "", dt$duration_seconds)
     
-    return(dt)
+    mean_duration <- mean(as.numeric(dt$duration_seconds))
+    return(mean_duration)
 })
-run_time_clust_benchmark <- rbindlist(run_time_clust_benchmark)
+names(supercell_runtime) <- str_to_title(datasets)
 ```
 
 ```{r}
 run_time_bcells <- fread(here("output", "oetjen_b_cell_panel", "20230511", "supercell_runtime.txt"),
                          sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
-run_time_bcells$dataset <- "Oetjen_bcells"
-run_time_bcells$duration_seconds <- gsub(" sec elapsed", "", run_time_bcells$duration_seconds)
-run_time_bcells$gamma <- "gamma20"
+supercell_runtime[["Oetjen_bcells"]] <- mean(as.numeric(gsub(" sec elapsed", "", run_time_bcells$duration_seconds)))
 ```
 
 ```{r}
 run_time_trussart <- fread(here("output", "trussart_cytofruv", "20230515_supercell_out", "supercell_runtime.txt"),
                          sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
-run_time_trussart$dataset <- "Trussart_cytofruv"
-run_time_trussart$duration_seconds <- gsub(" sec elapsed", "", run_time_trussart$duration_seconds)
-run_time_trussart$gamma <- "gamma20"
+supercell_runtime[["Trussart_cytofruv"]] <- mean(as.numeric(gsub(" sec elapsed", "", run_time_trussart$duration_seconds)))
 ```
 
 ```{r}
-run_time <- rbindlist(list(run_time_clust_benchmark, run_time_bcells, run_time_trussart))
-run_time$gamma <- gsub("gamma", "", run_time$gamma)
-run_time$duration_seconds <- as.numeric(run_time$duration_seconds)
-run_time$duration_minutes <- run_time$duration_seconds / 60
-run_time$duration_hours <- run_time$duration_seconds / 3600
+run_time_bodenmiller <- fread(here("output", "bodenmiller_cytof", "supercell_benchmark.txt"),
+                         sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+supercell_runtime[["BCR_XL"]] <- mean(as.numeric(gsub(" sec elapsed", "", run_time_bodenmiller$duration_seconds)))
 ```
 
 ```{r}
-ggplot(run_time[dataset %in% c("Samusik_all", "Levine_32dim")], 
-       aes(x = gamma, y = duration_minutes, colour = dataset)) +
-  geom_point(size = 2) +
-  scale_color_manual(values = c("Levine_32dim" = "purple", "Samusik_all" = "#FFC000")) +
+run_time_krieg <- fread(here("output", "krieg_melanoma", "supercell_benchmark.txt"),
+                         sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
+supercell_runtime[["Anti_PD1"]] <- mean(as.numeric(gsub(" sec elapsed", "", run_time_krieg$duration_seconds)))
+```
+
+```{r}
+supercell_runtime_dt <- data.table(
+  dataset=names(supercell_runtime),
+  duration_seconds=as.numeric(supercell_runtime)
+)
+supercell_runtime_dt[, duration_minutes := duration_seconds/60]
+supercell_runtime_dt[, log10_duration_minutes := log10(duration_minutes)]
+
+# manually entered this so watch out if it is wrong
+supercell_runtime_dt[, ncells := c(841644, 265627, 8314260, 8589739, 172791, 85715)]
+
+# mainly for plotting so we plot from smallest to largest
+supercell_runtime_dt <- supercell_runtime_dt[order(ncells)]
+
+supercell_runtime_dt[, ncells_pretty_label := prettyNum(ncells, big.mark=",", scientific=FALSE)]
+supercell_runtime_dt[, ncells_pretty_label := factor(ncells_pretty_label, levels=supercell_runtime_dt$ncells_pretty_label)]
+```
+
+```{r}
+y_axis_labs <- seq(-1.5,2.5,0.5)
+ggplot(supercell_runtime_dt, aes(x = ncells_pretty_label, y = log10_duration_minutes)) +
+  geom_point(aes(colour = dataset), size = 2) +
   theme_classic() +
-  scale_y_continuous(breaks = pretty_breaks(n=5), limits = c(2,3)) +
-  labs(y = "Duration (minutes)", x = "Gamma", color = "Dataset", title = "Time Taken to Generate Supercells")
+  scale_y_continuous(breaks = y_axis_labs, label = convert_log10_to_actual(y_axis_labs,1)) +
+  labs(y = "Duration (minutes)", x = "Number of cells", color = "Dataset", title = "Time taken to create supercells") +
+  theme(axis.text.x = element_text(angle = 45,  hjust=1), legend.position="bottom")
+```
+
+# Batch correction
+
+```{r}
+cycombine_duration_run1 <- fread("output/trussart_cytofruv/benchmark_duration/cycombine_benchmark_run1.txt")
+cycombine_duration_run1[, run := 'run_1']
+cycombine_duration_run2 <- fread("output/trussart_cytofruv/benchmark_duration/cycombine_benchmark_run2.txt")
+cycombine_duration_run2[, run := 'run_2']
+
+cycombine_duration <- rbind(cycombine_duration_run1, cycombine_duration_run2)
+cycombine_duration <- cycombine_duration[, c("V6","V4", "V7", "run")]
+names(cycombine_duration) <- c("gamma", "setting", "duration_seconds", "run")
+
+cycombine_duration[, gamma := gsub(":", "", gamma)]
+cycombine_duration[, gamma := gsub("singlecell", "single cell", gamma)]
+cycombine_duration[, gamma := gsub("gam", "", gamma)]
+
+cycombine_duration <- cycombine_duration[, .(duration_seconds = mean(duration_seconds)), by=c('gamma', 'setting')]
+cycombine_duration[, algorithm := 'cyCombine']
 ```
 
 ```{r}
-ggplot(run_time[dataset %in% c("Oetjen_bcells", "Trussart_cytofruv")], 
-       aes(x = dataset, y = duration_minutes, colour = dataset)) +
-  geom_point() +
-  scale_color_manual(values = c("Oetjen_bcells" = "#FF5733", "Trussart_cytofruv" = "turquoise")) +
-  theme_classic() +
-  scale_y_continuous(breaks = pretty_breaks(n=5)) +
-  labs(y = "Duration (minutes)", x = "Dataset", color = "Dataset", title = "Time Taken to Generate Supercells")
+cytofruv_duration_singlecell <- lapply(seq(24), function(setting) {
+    dt_run1 <- fread(paste0("output/trussart_cytofruv/benchmark_duration/cytofruv/run1/cytofruv_singlecell_setting", setting, ".txt"))
+    dt_run2 <- fread(paste0("output/trussart_cytofruv/benchmark_duration/cytofruv/run2/cytofruv_singlecell_setting", setting, ".txt"))
+    mean_duration <- mean(c(as.numeric(dt_run1$V5), as.numeric(dt_run2$V5)))
+    return(mean_duration)
+})
+cytofruv_duration_singlecell_dt <- data.table(
+  gamma = "single cell",
+  setting = seq(24),
+  duration_seconds = cytofruv_duration_singlecell
+)
+
+cytofruv_duration_supercell <- lapply(seq(10,40,10), function(gamma_val) {
+  cytofruv_duration <- lapply(seq(24), function(setting) {
+      dt_run1 <- fread(paste0("output/trussart_cytofruv/benchmark_duration/cytofruv/run1/cytofruv_supercell_gam", gamma_val, "_setting", setting, ".txt"))
+      dt_run2 <- fread(paste0("output/trussart_cytofruv/benchmark_duration/cytofruv/run2/cytofruv_supercell_gam", gamma_val, "_setting", setting, ".txt"))
+      mean_duration <- mean(c(as.numeric(dt_run1$V8), as.numeric(dt_run2$V8)))
+      return(mean_duration)
+  })
+  cytofruv_duration_dt <- data.table(
+    gamma = gamma_val,
+    setting = seq(24),
+    duration_seconds = cytofruv_duration
+  )
+  
+  return(cytofruv_duration_dt)
+})
+
+cytofruv_duration_supercell[['singlecell']] <- cytofruv_duration_singlecell_dt
 ```
 
-# How long did Louvain clustering take?
+```{r}
+batch_correction_duration <- rbindlist(cytofruv_duration_supercell)
+batch_correction_duration[, algorithm := "CytofRUV"]
+batch_correction_duration <- rbind(batch_correction_duration, cycombine_duration)
+
+batch_correction_duration[, algorithm := factor(algorithm)]
+batch_correction_duration[, gamma := factor(gamma, levels = c("single cell", seq(5,50,5)))]
+
+batch_correction_duration[, duration_seconds := as.numeric(duration_seconds)]
+batch_correction_duration[, duration_minutes := duration_seconds/60]
+batch_correction_duration[, log10_duration_minutes := log10(duration_minutes)]
+
+```
+
+
+```{r}
+y_axis_labs <- seq(-1.2,1.2,0.2)
+ggplot(batch_correction_duration, aes(x = gamma, y = log10_duration_minutes, fill=algorithm)) +
+  geom_boxplot(outlier.size=0.2, lwd=0.1) +
+  scale_fill_brewer(palette="Dark2") +
+  theme_classic() +
+  facet_wrap(~algorithm) +
+  theme(axis.text.x = element_text(angle = 45,  hjust=1), legend.position="none") +
+  scale_y_continuous(breaks = y_axis_labs, label = convert_log10_to_actual(y_axis_labs)) +
+  labs(y = "Duration (minutes)", x = "Gamma", title = "Time taken to do batch correction", fill='Algorithm')
+```
+
+# Louvain clustering
 
 ```{r}
 louvain_runtime_supercell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
     dt <- lapply(seq(5, 50, by=5), function(gam) {
         dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
                          dt_source, "louvain_supercell_runs", paste0("gamma_", gam),
-                         "louvain_supercell_runtime.txt"),
-                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
-        dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
-        dt$gamma <- gam
-        dt$dataset <- str_to_title(dt_source)
-        return(dt)
+                         "louvain_supercell_runtime.txt"))
+        
+        res <- data.table(
+          setting = factor(sapply(dt$V1, function(x) str_split_1(x, "_")[3])),
+          duration_seconds = as.numeric(dt$V2)
+        )
+        
+        med_dur <- res[, .(med_dur = mean(duration_seconds)), by = c("setting")]
+        
+        res <- data.table(
+          gamma = gam,
+          setting = med_dur$setting,
+          duration_seconds = as.numeric(med_dur$med_dur),
+          dataset = dt_source
+        )
+        return(res)
     })
     return(rbindlist(dt))
 })
 louvain_runtime_supercell <- rbindlist(louvain_runtime_supercell)
-louvain_runtime_supercell$type <- "Supercells"
 
 louvain_runtime_allcell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
     dt <- lapply(seq(10, 30, by=5), function(k) {
         dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
                          dt_source, "louvain_allcells", paste0("k", k),
-                         "louvain_supercell_runtime.txt"),
-                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
-        dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
-        dt$dataset <- str_to_title(dt_source)
-        return(dt)
+                         "louvain_supercell_runtime.txt"))
+        
+        res <- data.table(
+          gamma = "single cell",
+          setting = sapply(dt$V1, function(x) str_split_1(x, "_")[3])[1],
+          duration_seconds = mean(as.numeric(dt$V2)),
+          dataset = dt_source
+        )
+        
+        return(res)
     })
     return(rbindlist(dt))
 })
 louvain_runtime_allcell <- rbindlist(louvain_runtime_allcell)
-louvain_runtime_allcell$type <- "Single cells"
 
-louvain_runtime <- rbind(
+louvain_runtime_others <- rbind(
   louvain_runtime_allcell, 
-  louvain_runtime_supercell[, c("dataset", "duration_seconds", "type")]
+  louvain_runtime_supercell
 )
-louvain_runtime[, duration_minutes := duration_seconds / 60]
 ```
 
 ```{r}
-ggplot(louvain_runtime, aes(x = type, y = duration_minutes, colour = dataset)) +
-  geom_boxplot() +
-  scale_color_manual(values = c("Levine_32dim" = "purple", "Samusik_all" = "#FFC000")) +
+k_vals <- c(3,5,10,15,20)
+oetjen_duration_singlecell <- lapply(k_vals, function(setting) {
+    dt <- fread(paste0("output/oetjen_b_cell_panel/benchmark_runtime/run1/duration_louvain_singlecell_k", setting, ".txt"))
+    return(as.numeric(dt$V2))
+})
+oetjen_duration_singlecell_dt <- data.table(
+  gamma = "single cell",
+  setting = k_vals,
+  duration_seconds = oetjen_duration_singlecell
+)
+
+oetjen_duration_supercell <- lapply(seq(10,40,10), function(gamma_val) {
+  oetjen_duration <- lapply(k_vals, function(setting) {
+      dt <- fread(paste0("output/oetjen_b_cell_panel/benchmark_runtime/run1/duration_louvain_supercell_gamma", gamma_val, "_k", setting, ".txt"))
+      return(as.numeric(dt$V2))
+  })
+  oetjen_duration_dt <- data.table(
+    gamma = gamma_val,
+    setting = k_vals,
+    duration_seconds = oetjen_duration
+  )
+  
+  return(oetjen_duration_dt)
+})
+
+oetjen_duration_supercell[['singlecell']] <- oetjen_duration_singlecell_dt
+```
+
+```{r}
+oetjen_duration_dt <- rbindlist(oetjen_duration_supercell)
+oetjen_duration_dt[, dataset := "oetjen_bcells"]
+louvain_runtime <- rbind(louvain_runtime_others, oetjen_duration_dt)
+
+louvain_runtime[, duration_seconds := as.numeric(duration_seconds)]
+louvain_runtime[, log10_duration_seconds := log10(duration_seconds)]
+louvain_runtime[, duration_minutes := duration_seconds/60]
+louvain_runtime[, log10_duration_minutes := log10(duration_minutes)]
+louvain_runtime[, gamma := factor(gamma, levels = c("single cell", seq(5,50,5)))]
+```
+
+```{r}
+y_axis_labs <- seq(-2,3.5,0.5)
+ggplot(louvain_runtime, aes(x = gamma, y = log10_duration_minutes, fill=dataset)) +
+  geom_boxplot(outlier.size = 0.1, lwd=0.1) +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
   theme_classic() +
-  scale_y_continuous(breaks = pretty_breaks(n=20)) +
-  labs(y = "Duration (minutes)", x = "Gamma", color = "Dataset", title = "Louvain clustering run time")
+  facet_wrap(~dataset) +
+  scale_y_continuous(breaks = y_axis_labs, label = convert_log10_to_actual(y_axis_labs)) +
+  labs(y = "Duration (minutes)", x = "Gamma", title = "Time taken to run Louvain clustering", fill="Dataset") +
+  theme(axis.text.x = element_text(angle = 45,  hjust=1), legend.position="none")
 ```
 
-Median run time?
-
-```{r}
-louvain_runtime[, .(median_duration_sec = median(duration_seconds), median_duration_min = median(duration_minutes)), by = c("type", "dataset")]
-```
-
-# Any improvement for FlowSOM?
+# FlowSOM clustering
 
 ```{r}
 fsom_runtime_supercell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
     dt <- lapply(seq(5, 50, by=5), function(gam) {
         dt <- fread(here("output", "explore_supercell_purity_clustering", "20230511", 
                          dt_source, "flowsom_supercell_runs", paste0("gamma_", gam),
-                         "flowsom_supercell_runtime.txt"),
-                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
-        dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
-        dt$gamma <- gam
-        dt$dataset <- str_to_title(dt_source)
-        return(dt)
+                         "flowsom_supercell_runtime.txt"))
+        res <- data.table(
+          setting = factor(sapply(dt$V1, function(x) paste0(str_split_1(x, "_")[3], "_", str_split_1(x, "_")[4]))),
+          duration_seconds = as.numeric(dt$V2)
+        )
+        
+        med_dur <- res[, .(med_dur = mean(duration_seconds)), by = c("setting")]
+        
+        res <- data.table(
+          gamma = gam,
+          setting = med_dur$setting,
+          duration_seconds = as.numeric(med_dur$med_dur),
+          dataset = dt_source
+        )
+        return(res)
     })
     return(rbindlist(dt))
 })
 fsom_runtime_supercell <- rbindlist(fsom_runtime_supercell)
-fsom_runtime_supercell$type <- "Supercells"
 
 fsom_runtime_allcell <- lapply(c("samusik_all", "levine_32dim"), function(dt_source) {
     dt <- fread(here("output", "explore_supercell_purity_clustering", "20230509", 
-                         dt_source, "flowsom_allcells", "flowsom_allcell_runtime.txt"),
-                    sep = ":", header = FALSE, col.names = c("dataset", "duration_seconds"))
-    dt$duration_seconds <- as.numeric(gsub(" sec elapsed", "", dt$duration_seconds))
-    dt$dataset <- str_to_title(dt_source)
-    return(dt)
-    return(rbindlist(dt))
+                         dt_source, "flowsom_allcells", "flowsom_allcell_runtime.txt"))
+    res <- data.table(
+      setting = factor(sapply(dt$V1, function(x) paste0(str_split_1(x, "_")[3], "_", str_split_1(x, "_")[4]))),
+      duration_seconds = as.numeric(dt$V2)
+    )
+    
+    med_dur <- res[, .(med_dur = mean(duration_seconds)), by = c("setting")]
+    
+    res <- data.table(
+      gamma = "single cell",
+      setting = med_dur$setting,
+      duration_seconds = as.numeric(med_dur$med_dur),
+      dataset = dt_source
+    )
+    
+    return(res)
 })
 fsom_runtime_allcell <- rbindlist(fsom_runtime_allcell)
-fsom_runtime_allcell$type <- "Single Cells"
 
 fsom_runtime <- rbind(
   fsom_runtime_allcell, 
-  fsom_runtime_supercell[, c("dataset", "duration_seconds", "type")]
+  fsom_runtime_supercell
 )
+
+fsom_runtime[, duration_seconds := as.numeric(duration_seconds)]
+fsom_runtime[, log10_duration_seconds := log10(duration_seconds)]
+
+fsom_runtime[, gamma := factor(gamma, levels = c("single cell", seq(5,50,5)))]
 ```
 
 ```{r}
-ggplot(fsom_runtime, aes(x = type, y = duration_seconds, colour = dataset)) +
-  geom_boxplot() +
-  scale_color_manual(values = c("Levine_32dim" = "purple", "Samusik_all" = "#FFC000")) +
+ggplot(fsom_runtime, aes(x = gamma, y = duration_seconds, fill=dataset)) +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  geom_boxplot(outlier.size=0.2, lwd=0.2) +
   theme_classic() +
+  facet_wrap(~dataset) +
   scale_y_continuous(breaks = pretty_breaks(n=20)) +
-  labs(y = "Duration (seconds)", x = "Gamma", color = "Dataset", title = "FlowSOM clustering run time")
+  labs(y = "Duration (seconds)", x = "Gamma", title = "Time taken to run FlowSOM clustering", fill="Dataset") +
+  theme(axis.text.x = element_text(angle = 45,  hjust=1), legend.position="none")
 
 ```
 
-Median run time?
+# Label transfer
 
 ```{r}
-fsom_runtime[, .(median_duration_sec = median(duration_seconds)), by = c("type", "dataset")]
+dur_files <- c("harmony_knn_runtime_singlecell.txt", "harmony_knn_runtime.txt", 
+               "seurat_rPCA_singlecell_runtime.txt", "seurat_rPCA_runtime.txt")
+label_trans <- sapply(dur_files, function(f) {
+  dt <- fread(paste0("output/label_transfer/", f))
+  return(dt$V3)
+})
+label_trans_dt <- data.table(
+  approah = names(label_trans),
+  duration_seconds = label_trans,
+  duration_minutes = label_trans/60
+)
+label_trans_dt
 ```
 
 
