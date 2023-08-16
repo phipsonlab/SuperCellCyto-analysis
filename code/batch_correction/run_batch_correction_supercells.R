@@ -10,6 +10,7 @@ library(bluster)
 library(scales)
 library(parallel)
 library(batchelor)
+library(tictoc)
 
 source(here("code", "batch_correction", "cytofRUV_functions.R"))
 
@@ -27,6 +28,9 @@ set.seed(42)
 
 # ---- Run CytofRUV ----
 # Create sce object
+
+tic("Run cytofruv")
+
 supercell_exp_mat_transposed <- as.matrix(t(supercell_exp_mat[, markers, with = FALSE]))
 rownames(supercell_exp_mat_transposed) <- markers
 colnames(supercell_exp_mat_transposed) <- supercell_exp_mat$SuperCellId
@@ -61,7 +65,7 @@ celltype_markers <- as.vector(rownames(panel_info[panel_info$marker_class == 'ty
 # Not sure if 20 is a good number.
 sce <- cluster_data(sce, 42, markers_to_use = celltype_markers, 20)
 
-saveRDS(sce, here(outdir, "sce_object.rds"))
+# saveRDS(sce, here(outdir, "sce_object.rds"))
 
 # Use the CLL2 and the HCL1 samples as pseudo replicates.
 
@@ -90,9 +94,15 @@ norm_supercell_df <- merge.data.table(
     by = "sample_id"
 )
 
+toc(log = TRUE, quiet = TRUE)
+
 fwrite(norm_supercell_df, here(outdir, "supercellExpMat_postCytofRUV.csv"))
 
+
+
 # ---- Run cyCombine ----
+
+tic("Run cycombine")
 
 supercell_for_cycombine <- merge.data.table(
     supercell_exp_mat, sample_metadata,
@@ -113,6 +123,13 @@ cycombine_corrected <- batch_correct(
 cycombine_corrected <- cbind(
     cycombine_corrected,
     supercell_for_cycombine[, c("SuperCellId", "patient_id")]
+)
+
+toc(log = TRUE, quiet = TRUE)
+
+writeLines(
+    text = unlist(tic.log(format = TRUE)),
+    con = "output/trussart_cytofruv/supercell_duration_run1.txt"
 )
 
 fwrite(cycombine_corrected, here(outdir, "supercellExpMat_postCycombine.csv"))

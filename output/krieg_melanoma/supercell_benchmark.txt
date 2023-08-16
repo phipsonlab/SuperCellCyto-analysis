@@ -1,0 +1,2 @@
+Supercell run 1: 4.073 sec elapsed
+Supercell run 2: 2.86 sec elapsed

@@ -21,7 +21,7 @@ ab_names[which(str_detect(ab_names, "HLA"))]
 
 # For each marker, see potential candidate
 potential_cand <- lapply(cell_type_markers$marker_name, function(m) {
-    ab_names[which(str_detect(ab_names, paste0("\\b", m, "\\b")))]
+  ab_names[which(str_detect(ab_names, paste0("\\b", m, "\\b")))]
 })
 names(potential_cand) <- cell_type_markers$marker_name
 
@@ -29,39 +29,36 @@ common_markers <- unlist(potential_cand)
 
 # create new seurat object with just the common markers
 citeseq_common_ab <- CreateSeuratObject(
-    GetAssayData(citeseq_dat, assay = "AB", slot="count")[common_markers, ]
+  GetAssayData(citeseq_dat, assay = "AB", slot="count")[common_markers, ]
 )
 
 # Extract metadata and cell type
 citeseq_common_ab <- AddMetaData(
-    object = citeseq_common_ab,
-    metadata = rep("citeseq", ncol(citeseq_common_ab)),
-    col.name = "source"
+  object = citeseq_common_ab,
+  metadata = rep("citeseq", ncol(citeseq_common_ab)),
+  col.name = "source"
 )
 cell_types <- citeseq_dat$Cell_Type4
 Idents(citeseq_common_ab) <- cell_types
 
 # Normalise data using CLR
 citeseq_common_ab <- NormalizeData(
-    citeseq_common_ab,
-    normalization.method = "CLR",
-    margin = 1
+  citeseq_common_ab,
+  normalization.method = "CLR",
+  margin = 1
 )
 
 # Reverse the common markers so anything ending with -AB is the
 # name and anything not ending with -AB are the values
 common_markers <- setNames(paste0(names(common_markers), "_asinh_cf5"), common_markers)
 
-supercell_cytof <- fread(here("output", "explore_supercell_purity_clustering", "20230511",
-                              "levine_32dim", "supercell_runs", "supercellExpMat_gamma20.csv"))
-supercell_cytof_trans <- supercell_cytof[, common_markers, with = FALSE]
-setnames(supercell_cytof_trans, common_markers, names(common_markers))
+cytof_dt_transposed <- cytof_dt[, common_markers, with = FALSE]
+setnames(cytof_dt_transposed, common_markers, names(common_markers))
+cytof_dt_transposed <- transpose(cytof_dt_transposed)
+colnames(cytof_dt_transposed) <- cytof_dt$CellId
+rownames(cytof_dt_transposed) <- names(common_markers)
 
-supercell_cytof_trans <- transpose(supercell_cytof_trans)
-colnames(supercell_cytof_trans) <- supercell_cytof$SuperCellId
-rownames(supercell_cytof_trans) <- names(common_markers)
-
-cytof_seurat <- CreateSeuratObject(supercell_cytof_trans)
+cytof_seurat <- CreateSeuratObject(cytof_dt_transposed)
 cytof_seurat <- AddMetaData(
   object = cytof_seurat,
   metadata = rep("cytof", ncol(cytof_seurat)),
@@ -86,16 +83,16 @@ anchors <- FindTransferAnchors(
 )
 
 cytof_labels <- TransferData(
-    anchorset = anchors,
-    refdata = Idents(citeseq_common_ab),
-    weight.reduction='rpca.ref'
+  anchorset = anchors,
+  refdata = Idents(citeseq_common_ab),
+  weight.reduction='rpca.ref'
 )
 
 toc(log = TRUE, quiet = TRUE)
 
 writeLines(
   text = unlist(tic.log(format = TRUE)),
-  con = "output/label_transfer/seurat_rPCA_runtime_run2.txt"
+  con = "output/label_transfer/seurat_rPCA_singlecell_runtime_run2.txt"
 )
 tic.clearlog()
 
@@ -114,24 +111,15 @@ cytof_seurat <- AddMetaData(
 # Then we join it with the true cell type annotation we isolated before.
 
 cytof_supercell_annotations <- data.table(
-    SuperCellID = colnames(cytof_seurat),
-    predicted_population = Idents(cytof_seurat),
-    prediction_confidence = cytof_seurat$prediction_confidence
-)
-
-supercell_cell_map <- fread(here("output", "explore_supercell_purity_clustering", "20230511",
-                                 "levine_32dim", "supercell_runs", "supercellCellMap_gamma20.csv"))
-
-cytof_supercell_annotations <- merge.data.table(
-    x = cytof_supercell_annotations,
-    y = supercell_cell_map,
-    by = "SuperCellID"
+  CellId = colnames(cytof_seurat),
+  predicted_population = Idents(cytof_seurat),
+  prediction_confidence = cytof_seurat$prediction_confidence
 )
 
 cytof_supercell_annotations <- merge.data.table(
-    x = cytof_supercell_annotations,
-    y = cytof_dt[, c("CellId", "Gated_Population"), with = FALSE],
-    by = "CellId"
+  x = cytof_supercell_annotations,
+  y = cytof_dt[, c("CellId", "Gated_Population"), with = FALSE],
+  by = "CellId"
 )
 
-fwrite(cytof_supercell_annotations, here("output", "label_transfer", "seurat_rPCA.csv"))
+fwrite(cytof_supercell_annotations, here("output", "label_transfer", "seurat_rPCA_singlecell.csv"))

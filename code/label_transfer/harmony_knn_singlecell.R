@@ -50,26 +50,22 @@ citeseq_common_ab <- NormalizeData(
 # name and anything not ending with -AB are the values
 common_markers <- setNames(paste0(names(common_markers), "_asinh_cf5"), common_markers)
 
-supercell_cytof <- fread("output/explore_supercell_purity_clustering/20230511/levine_32dim/supercell_runs/supercellExpMat_gamma20.csv")
-
 # Keep only the common markers and the supercell id
-supercell_cytof <- supercell_cytof[, c("SuperCellId", common_markers), with = FALSE]
-setnames(supercell_cytof, "SuperCellId", "id")
-setnames(supercell_cytof, common_markers, names(common_markers))
-
+cytof_dt <- cytof_dt[, c("CellId", common_markers), with = FALSE]
+setnames(cytof_dt, "CellId", "id")
+setnames(cytof_dt, common_markers, names(common_markers))
 
 citeseq_common_ab_dt <- as.data.frame(t(GetAssayData(citeseq_common_ab)))
 citeseq_common_ab_dt$id <- rownames(citeseq_common_ab_dt)
 
-
-combined_dt <- rbind(citeseq_common_ab_dt, supercell_cytof)
+combined_dt <- rbind(citeseq_common_ab_dt, cytof_dt)
 combined_dt$id <- NULL
 
 
 # Setup metadata
 metadata <- data.frame(
-  source = c(rep("citeseq", nrow(citeseq_common_ab_dt)), rep("cytof", nrow(supercell_cytof))),
-  cell_supercell_id = c(citeseq_common_ab_dt$id, supercell_cytof$id)
+  source = c(rep("citeseq", nrow(citeseq_common_ab_dt)), rep("cytof", nrow(cytof_dt))),
+  cell_supercell_id = c(citeseq_common_ab_dt$id, cytof_dt$id)
 )
 
 tic.clearlog()
@@ -78,11 +74,11 @@ tic("Harmony kNN")
 
 # Run Harmony
 harmonyObj <- HarmonyMatrix(
-    data_mat = combined_dt,
-    meta_data = metadata,
-    vars_use = 'source',
-    return_object = TRUE,
-    do_pca = FALSE,
+  data_mat = combined_dt,
+  meta_data = metadata,
+  vars_use = 'source',
+  return_object = TRUE,
+  do_pca = FALSE,
 )
 
 integrated_data <- data.table(t(harmonyObj$Z_corr))
@@ -108,7 +104,7 @@ toc(log = TRUE, quiet = TRUE)
 
 writeLines(
   text = unlist(tic.log(format = TRUE)),
-  con = "output/label_transfer/harmony_knn_runtime_run2.txt"
+  con = "output/label_transfer/harmony_knn_runtime_singlecell_run2.txt"
 )
 tic.clearlog()
 
@@ -116,25 +112,19 @@ tic.clearlog()
 # Then join it to the mapping of supercell id and cell id.
 # So we can resolve the predicted cell type annotation of individual cell.
 # Then we join it with the true cell type annotation we isolated before.
-cytof_supercell_annotations <- data.table(
-    SuperCellID = metadata[metadata$source == "cytof",]$cell_supercell_id,
-    predicted_population = knn_prediction
+cytof_annotations <- data.table(
+  CellId = metadata[metadata$source == "cytof",]$cell_supercell_id,
+  predicted_population = knn_prediction
 )
 
-supercell_cell_map <- fread("output/explore_supercell_purity_clustering/20230511/levine_32dim/supercell_runs/supercellCellMap_gamma20.csv")
+actual_annotation <- fread("data/explore_supercell_purity_clustering/levine_32dim/levine_32_asinh.csv")
 
-cytof_supercell_annotations <- merge.data.table(
-    x = cytof_supercell_annotations,
-    y = supercell_cell_map,
-    by = "SuperCellID"
+cytof_annotations <- merge.data.table(
+  x = cytof_annotations,
+  y = actual_annotation[, c("CellId", "Gated_Population"), with = FALSE],
+  by = "CellId"
 )
 
-cytof_supercell_annotations <- merge.data.table(
-    x = cytof_supercell_annotations,
-    y = cytof_dt[, c("CellId", "Gated_Population"), with = FALSE],
-    by = "CellId"
-)
-
-fwrite(cytof_supercell_annotations, "output/label_transfer/harmony_knn.csv")
+fwrite(cytof_annotations, "output/label_transfer/harmony_knn_singlecell.csv")
 
 
