@@ -160,7 +160,7 @@ However, the 2nd dimension, post-correction, no longer separate the batches.
 Complementing the MDS plots, we will also the UMAP plots of the supercells coloured
 by the batches.
 
-```{r fig.width=12, fig.height=4}
+```{r}
 umap_plt_dat <- rbind(
   batch_corrected_supercells$CytofRUV[, c("UMAP_X", "UMAP_Y", "batch", "patient_id")],
   batch_corrected_supercells$cyCombine[, c("UMAP_X", "UMAP_Y", "batch", "patient_id")],
@@ -171,15 +171,35 @@ umap_plt_dat$correction <- c(
   rep("cyCombine", nrow(batch_corrected_supercells$cyCombine)),
   rep("None", nrow(supercell_exp_mat))
 )
+umap_plt_dat <- umap_plt_dat[order(batch)]
+```
 
-ggplot(umap_plt_dat, aes(x = UMAP_X, y = UMAP_Y, colour = batch)) +
-  geom_point(size = 0.3, alpha = 0.3) +
-  facet_grid(cols = vars(patient_id), rows = vars(correction)) +
-  scale_color_manual(values = c("batch1" = "#F8766D", "batch2" = "#00BFC4")) +
+```{r fig.width=12, fig.height=4}
+plt <- ggplot(umap_plt_dat, aes(x = UMAP_X, y = UMAP_Y, colour = batch)) +
+  geom_point(size = 0.1) +
+  facet_grid(rows = vars(patient_id), cols = vars(correction)) +
+  # scale_color_manual(values = c("batch1" = "#F8766D", "batch2" = "#00BFC4")) +
+  scale_color_manual(values=c("batch1" = "dodgerblue", "batch2" = "yellow")) +
   theme_classic() +
   guides(colour = guide_legend(override.aes = list(size = 5, alpha = 1))) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size=30),
+        legend.title = element_text(size=30),
+        axis.text = element_text(size=30),
+        axis.title = element_text(size=30),
+        strip.text = element_text(size=30))
 ```
+
+```{r}
+# ggsave(
+#     filename = "~/Documents/supercell/manuscript/figures_v2_postReview/batch_correction/umap_batch_v3.png",
+#     plot = plt,
+#     width = 12,
+#     height = 50,
+#     limitsize = FALSE
+# )
+```
+
 
 The UMAP plots demonstrate that following batch correction, supercells from 
 different batches overlap more so compared to those that are not corrected,
@@ -279,10 +299,10 @@ all_data <- melt(all_data, id.vars = c("batch", "correction"))
 all_data[, variable := gsub("^[^_]*_", "", gsub("_asinh_cf5", "", variable))]
 ```
 
-Plot the distribution for CD14, CD45RA, and PUMA for the main figure.
+Plot the distribution for CD14, CD45RA, and CD11c for the main figure.
 
 ```{r message=FALSE}
-subset_marker_dist <- all_data[variable %in% c("CD14", "CD45RA", "PUMA"), ]
+subset_marker_dist <- all_data[variable %in% c("CD14", "CD45RA", "CD11c"), ]
 # for ordering the panels
 subset_marker_dist[, correction := factor(correction, levels = c("uncorrected", "CytofRUV", "cyCombine"))]
 
@@ -296,10 +316,15 @@ ggplot(subset_marker_dist, aes(x = value, y = batch)) +
   labs(x = "Marker Expression", y = "Batch", title = "Distribution of Marker Expression")
 ```
 
+```{r}
+# ggsave("~/Documents/supercell/manuscript/figures_v2_postReview/figure_3/figure_3b.png", width=10, height=5, bg="white")
+```
+
+
 Plot the rest of the distribution out.
 
 ```{r message=FALSE, fig.width=10, fig.height=30}
-marker_dist <- all_data[!variable %in% c("CD14", "CD45RA", "PUMA"), ]
+marker_dist <- all_data[!variable %in% c("CD14", "CD45RA", "CD11c"), ]
 marker_dist[, correction := factor(correction, levels = c("uncorrected", "CytofRUV", "cyCombine"))]
 
 ggplot(marker_dist, aes(x = value, y = batch)) +
@@ -311,5 +336,10 @@ ggplot(marker_dist, aes(x = value, y = batch)) +
   scale_color_manual(values = c("uncorrected" = "#F8766D", "CytofRUV" = "#00BFC4", "cyCombine" = "#7CAE00")) +
   labs(x = "Marker Expression", y = "Batch", title = "Distribution of Marker Expression")
 ```
+
+```{r}
+# ggsave("~/Documents/supercell/manuscript/figures_v2_postReview/supp_figure_batch_distribution.png", width=15, height=30, bg="white")
+```
+
 
 # References

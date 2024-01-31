@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2023-08-15" />
+<meta name="date" content="2024-01-31" />
 
 <title>SuperCellCyto analysis</title>
 
@@ -360,7 +360,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">SuperCellCyto analysis</h1>
 <h4 class="author">Givanna Putri</h4>
-<h4 class="date">2023-08-15</h4>
+<h4 class="date">2024-01-31</h4>
 
 </div>
 
@@ -368,7 +368,7 @@ div.tocify {
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
 <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-workflowr <span class="glyphicon glyphicon-ok text-success"
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
 aria-hidden="true"></span>
 </button>
 </p>
@@ -379,8 +379,8 @@ aria-hidden="true"></span>
 </li>
 <li>
 <a data-toggle="tab" href="#checks"> Checks <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
-</a>
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -389,13 +389,13 @@ class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2023-08-15
+<strong>Last updated:</strong> 2024-01-31
 </p>
 <p>
 <strong>Checks:</strong> <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
 <span class="glyphicon glyphicon-exclamation-sign text-danger"
-aria-hidden="true"></span> 0
+aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>SuperCellCyto-analysis/</code>
@@ -418,18 +418,21 @@ versions</em> tab lists the development history.
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
-<span class="glyphicon glyphicon-ok text-success"
-aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
-</a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
+changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate"
+<div id="strongRMarkdownfilestronguncommittedchanges"
 class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git
-repository, you know the exact version of the code that produced these
-results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of
+the R Markdown file created these results, you’ll want to first commit
+it to the Git repo. If you’re still working on the analysis, you can
+ignore this warning. When you’re finished, you can run
+<code>wflow_publish</code> to commit the R Markdown file and build the
+HTML.</p>
 </div>
 </div>
 </div>
@@ -520,15 +523,15 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965targetblank7baf7b7a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree264aa646602fc6eeb09cb2afb9444315899c2333targetblank264aa64a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965" target="_blank">7baf7b7</a>
+<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/264aa646602fc6eeb09cb2afb9444315899c2333" target="_blank">264aa64</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965targetblank7baf7b7a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree264aa646602fc6eeb09cb2afb9444315899c2333targetblank264aa64a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -538,7 +541,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965" target="_blank">7baf7b7</a>.
+<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/264aa646602fc6eeb09cb2afb9444315899c2333" target="_blank">264aa64</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -559,10 +562,14 @@ Ignored files:
     Ignored:    analysis/.DS_Store
     Ignored:    code/.DS_Store
     Ignored:    code/b_cell_identification/.DS_Store
+    Ignored:    code/b_cell_identification/runtime_benchmark/.DS_Store
     Ignored:    code/batch_correction/.DS_Store
+    Ignored:    code/batch_correction/runtime_benchmark/.DS_Store
     Ignored:    code/explore_supercell_purity_clustering/.DS_Store
     Ignored:    code/explore_supercell_purity_clustering/functions/.DS_Store
     Ignored:    code/explore_supercell_purity_clustering/louvain_all_cells/.DS_Store
+    Ignored:    code/explore_supercell_purity_clustering/louvain_all_cells/levine_32dim/.DS_Store
+    Ignored:    code/label_transfer/.DS_Store
     Ignored:    code/label_transfer/.Rhistory
     Ignored:    data/.DS_Store
     Ignored:    data/bodenmiller_cytof/
@@ -578,24 +585,17 @@ Ignored files:
     Ignored:    output/trussart_cytofruv/
 
 Untracked files:
-    Untracked:  code/b_cell_identification/cluster_singlecell.R
-    Untracked:  code/b_cell_identification/rescale_supercell.R
-    Untracked:  code/b_cell_identification/runtime_benchmark/
-    Untracked:  code/batch_correction/benchmark_cycombine.R
-    Untracked:  code/batch_correction/rescale_supercell.R
-    Untracked:  code/batch_correction/runtime_benchmark/
-    Untracked:  code/bodenmiller_data/benchmark_supercell_runtime.R
-    Untracked:  code/compare_da_test_runtime.R
-    Untracked:  code/krieg_melanoma/
-    Untracked:  code/label_transfer/harmony_knn_singlecell.R
-    Untracked:  code/label_transfer/seurat_rpca_singlecell.R
-    Untracked:  output/krieg_melanoma/
+    Untracked:  code/b_cell_identification/additional_code/
+    Untracked:  code/batch_correction/additional_code/
+    Untracked:  code/explore_supercell_purity_clustering/additional_code/
+    Untracked:  code/label_transfer/additional_code/
 
 Unstaged changes:
     Modified:   SuperCellCyto-analysis.Rproj
-    Modified:   code/batch_correction/run_batch_correction_supercells.R
-    Modified:   code/label_transfer/harmony_knn.R
-    Modified:   code/label_transfer/seurat_rpca.R
+    Modified:   analysis/b_cells_identification.Rmd
+    Modified:   analysis/batch_correction.Rmd
+    Modified:   analysis/explore_supercell_purity_clustering.Rmd
+    Modified:   analysis/index.Rmd
 
 </code></pre>
 <p>
@@ -640,6 +640,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/phipsonlab/SuperCellCyto-analysis/98e46e021d9830f3582b691e3e4155cfab7bb9fd/docs/index.html" target="_blank">98e46e0</a>
+</td>
+<td>
+Givanna Putri
+</td>
+<td>
+2023-08-15
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -781,6 +798,73 @@ Rare Monocyte Subsets in Melanoma Patients</a></li>
 Between CITEseq and Cytometry Data</a></li>
 <li><a href="run_time.html">Analysis of Run Times</a></li>
 </ol>
+</div>
+<div id="updates" class="section level1">
+<h1>Updates</h1>
+<p>31st Jan 2023: Extra analyses were done to address reviewers’
+comments. Code used to perform the extra analyses are available on the
+<code>code</code> directory of this website’s <a
+href="https://github.com/phipsonlab/SuperCellCyto-analysis/">Github
+repository</a>.</p>
+<p>Extra analyses done and corresponding codes:</p>
+<ol style="list-style-type: decimal">
+<li>For <a href="explore_supercell_purity_clustering.html">Supercells
+Preserve Biological Heterogeneity and Facilitate Efficient Cell Type
+Identification</a>. Codes are stored in
+<code>code/explore_supercell_purity_clustering/additional_code</code>.
+<ul>
+<li><code>count_cell_type_per_supercell.R</code>: counted how many cell
+types were captured per supercell and illustrated that as bar
+chart.</li>
+<li><code>draw_purity_table.R</code>: stratify the purity scores and
+compute how many supercells obtained purity of 1, 0.9-1, 0.5-0.9,
+&lt;0.5.</li>
+<li><code>plot_supercell_size_distribution.R</code>: illustrate the
+number of cells captured per supercell.</li>
+<li><code>randomly_group_cells.R</code>: randomly group cells into
+groups which total number matches the number of supercells generated,
+and calculate base purity score.</li>
+</ul></li>
+<li>For <a href="b_cells_identification.html">Supercells Combined with
+Clustering Can Identify Rare B Cell Subsets</a>. Codes are stored in
+<code>code/b_cell_identification/additional_code</code>.
+<ul>
+<li><code>analyse_subsampled_data.R</code>: randomly subsampled over
+400k cells, clustered them, and attempted to identify the B cell
+subsets.</li>
+</ul></li>
+<li>For <a href="batch_correction.html">Mitigating Batch Effects in the
+Integration of Multi-Batch Cytometry Data at the Supercell Level</a>.
+Codes are stored in <code>code/batch_correction/additional_code</code>.
+<ul>
+<li><code>calculate_scib_metrics_for_submission.ipynb</code>: python
+notebook for computing biological signal preservation metrics in scib
+package.</li>
+<li><code>cluster_supercells.R</code>: cluster the supercells before and
+after batch correction. Needed for computing the biological signal
+preservation metrics.</li>
+<li><code>create_h5ad_files.ipynb</code>: convert the output of the
+clustered supercelsl to h5ad file. Needed for computing the biological
+signal preservation metrics.</li>
+<li><code>plot_metrics.R</code>: plot the heatmap to illustrate the
+scores for biological signal preservation metrics.</li>
+</ul></li>
+<li>For <a href="label_transfer.html">Efficient Cell Type Label Transfer
+Between CITEseq and Cytometry Data</a>. Codes are stored in
+<code>code/label_transfer/additional_code</code>.
+<ul>
+<li><code>calculate_weighted_accuracy.ipynb</code>: python notebook to
+compute weighted accuracy.</li>
+<li><code>check_subsets.R</code>: plotting the UMAP of the CITEseq
+annotations (original and mapped).</li>
+<li><code>confusion_matrix.R</code>: for drawing confusion
+matrices.</li>
+<li><code>draw_umap.R</code>: draw UMAP for the outcome of the label
+transfer.</li>
+<li><code>plot_accuracies.R</code>: plot charts for the accuracy
+scores.</li>
+</ul></li>
+</ol>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -792,7 +876,7 @@ Session information
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 4.2.3 (2023-03-15)
 Platform: aarch64-apple-darwin20 (64-bit)
-Running under: macOS Monterey 12.6
+Running under: macOS 14.0
 
 Matrix products: default
 BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -812,7 +896,7 @@ loaded via a namespace (and not attached):
  [5] later_1.3.0      git2r_0.31.0     jquerylib_0.1.4  tools_4.2.3     
  [9] getPass_0.2-2    digest_0.6.31    jsonlite_1.8.4   evaluate_0.20   
 [13] lifecycle_1.0.3  tibble_3.1.8     pkgconfig_2.0.3  rlang_1.0.6     
-[17] cli_3.6.0        rstudioapi_0.14  yaml_2.3.7       xfun_0.39       
+[17] cli_3.6.1        rstudioapi_0.14  yaml_2.3.7       xfun_0.39       
 [21] fastmap_1.1.0    httr_1.4.4       stringr_1.5.0    knitr_1.42      
 [25] fs_1.6.1         vctrs_0.5.2      sass_0.4.5       rprojroot_2.0.3 
 [29] glue_1.6.2       R6_2.5.1         processx_3.8.0   fansi_1.0.4     

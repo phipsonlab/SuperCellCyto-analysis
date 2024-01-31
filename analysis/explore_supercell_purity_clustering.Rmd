@@ -126,6 +126,7 @@ purity_scores[, gamma := factor(gamma)]
 ```{r}
 ggplot(purity_scores, aes(y = purity, x = gamma)) +
   geom_violin() +
+  stat_summary(fun = mean, geom = "point", color = "red", size = 1) +
   facet_wrap(~data_source) +
   theme_bw() +
   scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +

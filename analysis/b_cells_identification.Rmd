@@ -64,7 +64,7 @@ These supercells were clustered using Louvain clustering with k parameter set to
 
 All code used to execute these procedures can be found in `code/oetjen_bm_data/cluster_run_supercell.R`.
 
-# Load libraries
+## Load libraries
 
 ```{r message=FALSE, warning=FALSE}
 library(scales)
@@ -158,7 +158,7 @@ pheatmap(
   cluster_cols = FALSE,
   cluster_rows = FALSE,
   annotation_col = heatmap_annot_col,
-  scale = "column",
+  # scale = "column",
   main = "Median Expression of Cell Type Markers Across Clusters",
   annotation_colors = list(cell_type = annot_colours),
   angle_col = 90
@@ -183,12 +183,13 @@ The code to generate the UMAP coordinates is available on `code/oetjen_bm_data/c
 
 ```{r}
 cell_types <- sort(unique(supercell_mat_annot$cell_type))
-colour_scheme <- viridis(n = length(cell_types) - 1, option = "turbo")
-names(colour_scheme) <- cell_types[c(1:length(cell_types) - 1)]
+cell_types <- cell_types[cell_types != "CD45- and/or CD19-"]
+colour_scheme <- viridis(n = length(cell_types), option = "turbo")
+names(colour_scheme) <- cell_types
 colour_scheme["CD45- and/or CD19-"] <- "#D3D3D3"
 
 # So unknown is at the bottom.
-supercell_mat_annot[, cell_type := factor(cell_type, levels = cell_types)]
+supercell_mat_annot[, cell_type := factor(cell_type, levels = names(colour_scheme))]
 
 ggplot(supercell_mat_annot, aes(x = UMAP_X, y = UMAP_Y, colour = cell_type)) +
   geom_point(size = 0.2) +
@@ -295,7 +296,7 @@ cell_map <- merge.data.table(
 )
 
 # Proportion for each cluster and cell type
-cell_type_proportion <- cell_map[, .(cnt_per_clust = .N), by = c("cell_type")]
+cell_type_proportion <- cell_map[, .(cnt_per_clust = .N), by = c("cell_type", "Sample")]
 cell_type_proportion[, proportion := cnt_per_clust / nrow(cell_map)]
 cell_type_proportion_noUnassigned <- cell_type_proportion[cell_type != "CD45- and/or CD19-", ]
 
@@ -306,29 +307,21 @@ names(cell_name_color) <- ordered_cell_name
 
 
 # Order from highest proportion to low
-cell_type_proportion_noUnassigned <- cell_type_proportion_noUnassigned[order(-proportion)]
-cell_type_proportion_noUnassigned[, cell_type := factor(cell_type, levels = cell_type_proportion_noUnassigned$cell_type)]
+# cell_type_proportion_noUnassigned <- cell_type_proportion_noUnassigned[order(-proportion)]
+# cell_type_proportion_noUnassigned[, cell_type := factor(cell_type, levels = cell_type_proportion_noUnassigned$cell_type)]
 ```
 
 ```{r}
-ggplot(
-  cell_type_proportion_noUnassigned,
-  aes(
-    x = cell_type, y = proportion,
-    color = cell_type
-  )
-) +
-  geom_point(size = 3) +
+ggplot(cell_type_proportion_noUnassigned, aes(x = cell_type, y = proportion)) +
+  geom_boxplot() +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none") +
   scale_y_continuous(breaks = pretty_breaks(n = 10)) +
   scale_color_manual(values = cell_name_color, breaks = names(cell_name_color)) +
   labs(
     y = "Proportion of single cells", x = "Cell type", color = "Cell type",
-    title = "Proportion of B cell subsets"
+    title = "Proportion of B cell subsets across all samples"
   )
 ```
 
-
-
-# References
+## References

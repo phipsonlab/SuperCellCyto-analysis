@@ -392,7 +392,7 @@ Heterogeneity and Facilitate Efficient Cell Type Identification</h1>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
 <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-workflowr <span class="glyphicon glyphicon-ok text-success"
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
 aria-hidden="true"></span>
 </button>
 </p>
@@ -403,8 +403,8 @@ aria-hidden="true"></span>
 </li>
 <li>
 <a data-toggle="tab" href="#checks"> Checks <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
-</a>
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -413,13 +413,13 @@ class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2023-08-15
+<strong>Last updated:</strong> 2024-01-31
 </p>
 <p>
 <strong>Checks:</strong> <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
 <span class="glyphicon glyphicon-exclamation-sign text-danger"
-aria-hidden="true"></span> 0
+aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>SuperCellCyto-analysis/</code>
@@ -442,18 +442,21 @@ versions</em> tab lists the development history.
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
-<span class="glyphicon glyphicon-ok text-success"
-aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
-</a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
+changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate"
+<div id="strongRMarkdownfilestronguncommittedchanges"
 class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git
-repository, you know the exact version of the code that produced these
-results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of
+the R Markdown file created these results, you’ll want to first commit
+it to the Git repo. If you’re still working on the analysis, you can
+ignore this warning. When you’re finished, you can run
+<code>wflow_publish</code> to commit the R Markdown file and build the
+HTML.</p>
 </div>
 </div>
 </div>
@@ -544,15 +547,15 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965targetblank7baf7b7a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree264aa646602fc6eeb09cb2afb9444315899c2333targetblank264aa64a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965" target="_blank">7baf7b7</a>
+<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/264aa646602fc6eeb09cb2afb9444315899c2333" target="_blank">264aa64</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965targetblank7baf7b7a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomphipsonlabSuperCellCytoanalysistree264aa646602fc6eeb09cb2afb9444315899c2333targetblank264aa64a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -562,7 +565,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/7baf7b743b8e6601fb3a3ddd87ccbd24bd3fb965" target="_blank">7baf7b7</a>.
+<a href="https://github.com/phipsonlab/SuperCellCyto-analysis/tree/264aa646602fc6eeb09cb2afb9444315899c2333" target="_blank">264aa64</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -583,10 +586,13 @@ Ignored files:
     Ignored:    analysis/.DS_Store
     Ignored:    code/.DS_Store
     Ignored:    code/b_cell_identification/.DS_Store
+    Ignored:    code/b_cell_identification/runtime_benchmark/.DS_Store
     Ignored:    code/batch_correction/.DS_Store
+    Ignored:    code/batch_correction/runtime_benchmark/.DS_Store
     Ignored:    code/explore_supercell_purity_clustering/.DS_Store
     Ignored:    code/explore_supercell_purity_clustering/functions/.DS_Store
     Ignored:    code/explore_supercell_purity_clustering/louvain_all_cells/.DS_Store
+    Ignored:    code/explore_supercell_purity_clustering/louvain_all_cells/levine_32dim/.DS_Store
     Ignored:    code/label_transfer/.Rhistory
     Ignored:    data/.DS_Store
     Ignored:    data/bodenmiller_cytof/
@@ -602,24 +608,16 @@ Ignored files:
     Ignored:    output/trussart_cytofruv/
 
 Untracked files:
-    Untracked:  code/b_cell_identification/cluster_singlecell.R
-    Untracked:  code/b_cell_identification/rescale_supercell.R
-    Untracked:  code/b_cell_identification/runtime_benchmark/
-    Untracked:  code/batch_correction/benchmark_cycombine.R
-    Untracked:  code/batch_correction/rescale_supercell.R
-    Untracked:  code/batch_correction/runtime_benchmark/
-    Untracked:  code/bodenmiller_data/benchmark_supercell_runtime.R
-    Untracked:  code/compare_da_test_runtime.R
-    Untracked:  code/krieg_melanoma/
-    Untracked:  code/label_transfer/harmony_knn_singlecell.R
-    Untracked:  code/label_transfer/seurat_rpca_singlecell.R
-    Untracked:  output/krieg_melanoma/
+    Untracked:  code/b_cell_identification/additional_code/
+    Untracked:  code/batch_correction/additional_code/
+    Untracked:  code/explore_supercell_purity_clustering/additional_code/
+    Untracked:  code/label_transfer/additional_code/
 
 Unstaged changes:
     Modified:   SuperCellCyto-analysis.Rproj
-    Modified:   code/batch_correction/run_batch_correction_supercells.R
-    Modified:   code/label_transfer/harmony_knn.R
-    Modified:   code/label_transfer/seurat_rpca.R
+    Modified:   analysis/b_cells_identification.Rmd
+    Modified:   analysis/batch_correction.Rmd
+    Modified:   analysis/explore_supercell_purity_clustering.Rmd
 
 </code></pre>
 <p>
@@ -666,6 +664,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/phipsonlab/SuperCellCyto-analysis/98e46e021d9830f3582b691e3e4155cfab7bb9fd/docs/explore_supercell_purity_clustering.html" target="_blank">98e46e0</a>
+</td>
+<td>
+Givanna Putri
+</td>
+<td>
+2023-08-15
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -882,6 +897,7 @@ purity_scores &lt;- rbind(levine_purity, samusik_purity)
 purity_scores[, gamma := factor(gamma)]</code></pre>
 <pre class="r"><code>ggplot(purity_scores, aes(y = purity, x = gamma)) +
   geom_violin() +
+  stat_summary(fun = mean, geom = &quot;point&quot;, color = &quot;red&quot;, size = 1) +
   facet_wrap(~data_source) +
   theme_bw() +
   scale_y_continuous(breaks = pretty_breaks(n = 10), limits = c(0, 1)) +
@@ -1334,7 +1350,7 @@ Session information
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 4.2.3 (2023-03-15)
 Platform: aarch64-apple-darwin20 (64-bit)
-Running under: macOS Monterey 12.6
+Running under: macOS 14.0
 
 Matrix products: default
 BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -1347,9 +1363,9 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] viridis_0.6.2     viridisLite_0.4.1 ggridges_0.5.4    stringr_1.5.0    
-[5] here_1.0.1        scales_1.2.1      ggplot2_3.4.1     data.table_1.14.8
-[9] workflowr_1.7.0  
+[1] viridis_0.6.2      viridisLite_0.4.1  ggridges_0.5.4     stringr_1.5.0     
+[5] here_1.0.1         scales_1.2.1       ggplot2_3.4.1      data.table_1.14.10
+[9] workflowr_1.7.0   
 
 loaded via a namespace (and not attached):
  [1] tidyselect_1.2.0 xfun_0.39        bslib_0.4.2      colorspace_2.1-0
@@ -1362,7 +1378,7 @@ loaded via a namespace (and not attached):
 [29] cachem_1.0.6     jsonlite_1.8.4   farver_2.1.1     fs_1.6.1        
 [33] gridExtra_2.3    digest_0.6.31    stringi_1.7.12   processx_3.8.0  
 [37] dplyr_1.1.0      getPass_0.2-2    rprojroot_2.0.3  grid_4.2.3      
-[41] cli_3.6.0        tools_4.2.3      magrittr_2.0.3   sass_0.4.5      
+[41] cli_3.6.1        tools_4.2.3      magrittr_2.0.3   sass_0.4.5      
 [45] tibble_3.1.8     whisker_0.4.1    pkgconfig_2.0.3  rmarkdown_2.20  
 [49] httr_1.4.4       rstudioapi_0.14  R6_2.5.1         git2r_0.31.0    
 [53] compiler_4.2.3  </code></pre>

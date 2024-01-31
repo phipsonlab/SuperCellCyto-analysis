@@ -35,3 +35,39 @@ Givanna H. Putri^1^, George Howitt^2^, Felix Marsh-Wakefield^3^, Thomas Ashhurst
 5. [Identification of Differentially Abundant Rare Monocyte Subsets in Melanoma Patients](da_test.html)
 6. [Efficient Cell Type Label Transfer Between CITEseq and Cytometry Data](label_transfer.html)
 7. [Analysis of Run Times](run_time.html)
+
+# Updates
+
+31st Jan 2023: Extra analyses were done to address reviewers' comments.
+Code used to perform the extra analyses are available on the `code` directory
+of this website's [Github repository](https://github.com/phipsonlab/SuperCellCyto-analysis/).
+
+Extra analyses done and corresponding codes:
+
+1. For [Supercells Preserve Biological Heterogeneity and Facilitate Efficient Cell Type Identification](explore_supercell_purity_clustering.html).
+Codes are stored in `code/explore_supercell_purity_clustering/additional_code`.
+    * `count_cell_type_per_supercell.R`: counted how many cell types were captured per supercell and illustrated that as bar chart.
+    * `draw_purity_table.R`: stratify the purity scores and compute how many supercells obtained purity of 1, 0.9-1, 0.5-0.9, <0.5.
+    * `plot_supercell_size_distribution.R`: illustrate the number of cells captured per supercell.
+    * `randomly_group_cells.R`: randomly group cells into groups which total number matches the number of supercells generated, 
+    and calculate base purity score.
+2. For [Supercells Combined with Clustering Can Identify Rare B Cell Subsets](b_cells_identification.html).
+Codes are stored in `code/b_cell_identification/additional_code`.
+    * `analyse_subsampled_data.R`: randomly subsampled over 400k cells, clustered them, and attempted to identify the B cell subsets.
+3. For [Mitigating Batch Effects in the Integration of Multi-Batch Cytometry Data at the Supercell Level](batch_correction.html).
+Codes are stored in `code/batch_correction/additional_code`.
+    * `calculate_scib_metrics_for_submission.ipynb`: python notebook for computing biological signal preservation metrics in scib package.
+    * `cluster_supercells.R`: cluster the supercells before and after batch correction. Needed for computing the biological signal preservation metrics.
+    * `create_h5ad_files.ipynb`: convert the output of the clustered supercelsl to h5ad file. Needed for computing the biological signal preservation metrics.
+    * `plot_metrics.R`: plot the heatmap to illustrate the scores for biological signal preservation metrics.
+4. For [Efficient Cell Type Label Transfer Between CITEseq and Cytometry Data](label_transfer.html).
+Codes are stored in `code/label_transfer/additional_code`.
+    * `calculate_weighted_accuracy.ipynb`: python notebook to compute weighted accuracy.
+    * `check_subsets.R`: plotting the UMAP of the CITEseq annotations (original and mapped).
+    * `confusion_matrix.R`: for drawing confusion matrices.
+    * `draw_umap.R`: draw UMAP for the outcome of the label transfer.
+    * `plot_accuracies.R`: plot charts for the accuracy scores.
+    
+
+
+
